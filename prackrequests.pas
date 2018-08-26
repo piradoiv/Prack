@@ -32,6 +32,7 @@ type
       FServerPort: Integer;
       function BuildEnvironment: TEnvItemList;
       function BuildFirstLine(Line: String): TEnvItemList;
+      function ExtractEnvItem(Line: String): TEnvItem;
     public
       Identifier: String;
       FSocket: TTCPBlockSocket;
@@ -97,7 +98,6 @@ function TRequest.BuildEnvironment: TEnvItemList;
 var
   Line: String;
   LineNumber: Integer;
-  S: String;
   FirstLineItems: TEnvItemList;
   Item: TEnvItem;
 begin
@@ -119,15 +119,11 @@ begin
       Continue;
     end;
 
-    S := Concat('HTTP_', UpperCase(ExtractDelimited(1, Line, [':'])));
-    S := StringReplace(S, ' ', '_', [rfReplaceAll]);
-    S := StringReplace(S, '-', '_', [rfReplaceAll]);
-    Result.Add(TEnvItem.Create(S, Trim(ExtractDelimited(2, Line, [':']))));
+    Result.Add(ExtractEnvItem(Line));
   until Line = '';
 
   Result.Add(TEnvItem.Create('SERVER_NAME', FServerName));
   Result.Add(TEnvItem.Create('SERVER_PORT', IntToStr(FServerPort)));
-
   Result.Add(TEnvItem.Create('rack.url_scheme', 'HTTP'));
 end;
 
@@ -150,6 +146,16 @@ begin
     'HTTP_VERSION',
     ExtractDelimited(2, ExtractDelimited(3, Line, [' ']), ['/']))
   );
+end;
+
+function TRequest.ExtractEnvItem(Line: String): TEnvItem;
+var
+  S: String;
+begin
+  S := Concat('HTTP_', UpperCase(ExtractDelimited(1, Line, [':'])));
+  S := StringReplace(S, ' ', '_', [rfReplaceAll]);
+  S := StringReplace(S, '-', '_', [rfReplaceAll]);
+  Result := TEnvItem.Create(S, Trim(ExtractDelimited(2, Line, [':'])));
 end;
 
 procedure TRequest.ExampleHandler;

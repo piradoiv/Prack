@@ -127,6 +127,8 @@ begin
 
   Result.Add(TEnvItem.Create('SERVER_NAME', FServerName));
   Result.Add(TEnvItem.Create('SERVER_PORT', IntToStr(FServerPort)));
+
+  Result.Add(TEnvItem.Create('rack.url_scheme', 'HTTP'));
 end;
 
 function TRequest.BuildFirstLine(Line: String): TEnvItemList;
@@ -138,9 +140,10 @@ begin
   URL := ExtractDelimited(2, Line, [' ']);
   Result.Add(TEnvItem.Create('REQUEST_URL', URL));
   S := ExtractDelimited(2, URL, ['/']);
+  if S <> '' then S := Concat('/', S);
   Result.Add(TEnvItem.Create('SCRIPT_NAME', S));
 
-  S := StringReplace(URL, '/' + S, '', []);
+  S := StringReplace(URL, S, '', []);
   Result.Add(TEnvItem.Create('PATH_INFO', ExtractDelimited(1, S, ['?'])));
   Result.Add(TEnvItem.Create('QUERY_STRING', ExtractDelimited(2, S, ['?'])));
   Result.Add(TEnvItem.Create(

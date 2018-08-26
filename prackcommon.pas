@@ -5,7 +5,7 @@ unit PrackCommon;
 interface
 
 uses
-  Classes, SysUtils, FGL, BlckSock, Sockets, PrackRequests;
+  Classes, SysUtils, FGL, BlckSock, PrackRequests;
 
 type
   { THeader }

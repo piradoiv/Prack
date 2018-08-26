@@ -33,6 +33,7 @@ type
 implementation
 
 { TPrackServer }
+
 constructor TPrackServer.Create(Host: String; Port: Integer);
 begin
   FHost := Host;
@@ -75,8 +76,7 @@ end;
 destructor TPrackServer.Destroy;
 begin
   FreeAndNil(FSocket);
-  FResponsesThread.Terminate;
-  FreeAndNil(FResponsesThread);
+  Writeln(CRLF + '(╯°□°）╯︵ ┻━┻');
   inherited;
 end;
 

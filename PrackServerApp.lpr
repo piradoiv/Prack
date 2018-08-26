@@ -6,11 +6,13 @@ uses
   {$IFDEF UNIX}
   Cthreads, Cmem,
   {$ENDIF}
-  Classes, SysUtils, BaseUnix,
+  Classes, SysUtils, BaseUnix, StrUtils,
   PrackCommon, PrackServer, PrackRequests, PrackResponses;
 
 var
   Server: TPrackServer;
+  Host: String;
+  Port: Integer;
 
 procedure SigKillHandler(Sig : Longint); cdecl;
 begin
@@ -20,7 +22,16 @@ end;
 
 begin
   FpSignal(SIGINT, @SigKillHandler);
-  Server := TPrackServer.Create('127.0.0.1', 8080);
+
+  if ParamStr(1) <> '' then Host := ParamStr(1) else Host := '127.0.0.1';
+  try
+    Port := StrToInt(ParamStr(2));
+  except
+    Port := 8080;
+  end;
+
+  Writeln('Starting server on http://', Host, ':', IntToStr(Port));
+  Server := TPrackServer.Create(Host, Port);
   Server.Start;
 end.
 

@@ -22,7 +22,11 @@ type
 
   { TEnvItemList }
 
-  TEnvItemList = specialize TFPGObjectList<TEnvItem>;
+  TCustomEnvItemList = specialize TFPGObjectList<TEnvItem>;
+  TEnvItemList = class(TCustomEnvItemList)
+    public
+      procedure Append(MoreItems: TEnvItemList);
+  end;
 
   { TRequest }
 
@@ -32,6 +36,7 @@ type
       FServerPort: Integer;
       function BuildEnvironment: TEnvItemList;
       function BuildFirstLine(Line: String): TEnvItemList;
+      function BuildGlobalEnvItems: TEnvItemList;
       function ExtractEnvItem(Line: String): TEnvItem;
     public
       Identifier: String;
@@ -51,6 +56,19 @@ TRequestList = specialize TFPGObjectList<TRequest>;
 PRequestList = ^TRequestList;
 
 implementation
+
+{ TEnvItemList }
+
+procedure TEnvItemList.Append(MoreItems: TEnvItemList);
+var
+  Item: TEnvItem;
+begin
+  for Item in MoreItems do
+  begin
+    Add(Item);
+  end;
+  FreeAndNil(MoreItems);
+end;
 
 { TEnvItem }
 
@@ -98,8 +116,6 @@ function TRequest.BuildEnvironment: TEnvItemList;
 var
   Line: String;
   LineNumber: Integer;
-  FirstLineItems: TEnvItemList;
-  Item: TEnvItem;
 begin
   Result := TEnvItemList.Create;
   LineNumber := 0;
@@ -107,24 +123,13 @@ begin
     Inc(LineNumber);
     Line := FSocket.RecvString(100);
     if Line = '' then Continue;
-
     if LineNumber = 1 then
-    begin
-      FirstLineItems := BuildFirstLine(Line);
-      for Item in FirstLineItems do
-      begin
-        Result.Add(Item);
-      end;
-      FreeAndNil(FirstLineItems);
-      Continue;
-    end;
-
-    Result.Add(ExtractEnvItem(Line));
+      Result.Append(BuildFirstLine(Line))
+    else
+      Result.Add(ExtractEnvItem(Line));
   until Line = '';
 
-  Result.Add(TEnvItem.Create('SERVER_NAME', FServerName));
-  Result.Add(TEnvItem.Create('SERVER_PORT', IntToStr(FServerPort)));
-  Result.Add(TEnvItem.Create('rack.url_scheme', 'HTTP'));
+  Result.Append(BuildGlobalEnvItems);
 end;
 
 function TRequest.BuildFirstLine(Line: String): TEnvItemList;
@@ -146,6 +151,14 @@ begin
     'HTTP_VERSION',
     ExtractDelimited(2, ExtractDelimited(3, Line, [' ']), ['/']))
   );
+end;
+
+function TRequest.BuildGlobalEnvItems: TEnvItemList;
+begin
+  Result := TEnvItemList.Create(False);
+  Result.Add(TEnvItem.Create('SERVER_NAME', FServerName));
+  Result.Add(TEnvItem.Create('SERVER_PORT', IntToStr(FServerPort)));
+  Result.Add(TEnvItem.Create('rack.url_scheme', 'HTTP'));
 end;
 
 function TRequest.ExtractEnvItem(Line: String): TEnvItem;

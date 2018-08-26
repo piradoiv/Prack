@@ -134,23 +134,25 @@ end;
 
 function TRequest.BuildFirstLine(Line: String): TEnvItemList;
 var
-  URL, S: String;
+  Method, URL, ScriptName, Path, Version: String;
 begin
   Result := TEnvItemList.Create(False);
-  Result.Add(TEnvItem.Create('REQUEST_METHOD', ExtractDelimited(1, Line, [' '])));
+  Method := ExtractDelimited(1, Line, [' ']);
+  Result.Add(TEnvItem.Create('REQUEST_METHOD', Method));
+
   URL := ExtractDelimited(2, Line, [' ']);
   Result.Add(TEnvItem.Create('REQUEST_URL', URL));
-  S := ExtractDelimited(2, URL, ['/']);
-  if S <> '' then S := Concat('/', S);
-  Result.Add(TEnvItem.Create('SCRIPT_NAME', S));
 
-  S := StringReplace(URL, S, '', []);
-  Result.Add(TEnvItem.Create('PATH_INFO', ExtractDelimited(1, S, ['?'])));
-  Result.Add(TEnvItem.Create('QUERY_STRING', ExtractDelimited(2, S, ['?'])));
-  Result.Add(TEnvItem.Create(
-    'HTTP_VERSION',
-    ExtractDelimited(2, ExtractDelimited(3, Line, [' ']), ['/']))
-  );
+  ScriptName := ExtractDelimited(2, URL, ['/']);
+  if ScriptName <> '' then ScriptName := Concat('/', ScriptName);
+  Result.Add(TEnvItem.Create('SCRIPT_NAME', ScriptName));
+
+  Path := StringReplace(URL, ScriptName, '', []);
+  Result.Add(TEnvItem.Create('PATH_INFO', ExtractDelimited(1, Path, ['?'])));
+  Result.Add(TEnvItem.Create('QUERY_STRING', ExtractDelimited(2, Path, ['?'])));
+
+  Version := ExtractDelimited(2, ExtractDelimited(3, Line, [' ']), ['/']);
+  Result.Add(TEnvItem.Create('HTTP_VERSION', Version));
 end;
 
 function TRequest.BuildGlobalEnvItems: TEnvItemList;

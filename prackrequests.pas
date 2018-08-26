@@ -115,6 +115,7 @@ begin
       begin
         Result.Add(Item);
       end;
+      FreeAndNil(FirstLineItems);
       Continue;
     end;
 
@@ -132,7 +133,7 @@ function TRequest.BuildFirstLine(Line: String): TEnvItemList;
 var
   URL, S: String;
 begin
-  Result := TEnvItemList.Create;
+  Result := TEnvItemList.Create(False);
   Result.Add(TEnvItem.Create('REQUEST_METHOD', ExtractDelimited(1, Line, [' '])));
   URL := ExtractDelimited(2, Line, [' ']);
   Result.Add(TEnvItem.Create('REQUEST_URL', URL));
@@ -167,6 +168,7 @@ destructor TRequest.Destroy;
 begin
   FSocket.CloseSocket;
   FreeAndNil(FSocket);
+  FreeAndNil(Environment);
   inherited;
 end;
 

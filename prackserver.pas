@@ -6,7 +6,7 @@ interface
 
 uses
   Classes, SysUtils, BlckSock,
-  PrackCommon, PrackRequests, PrackResponses;
+  PrackCommon, PrackRequests, PrackResponses, PrackSocket;
 
 type
 

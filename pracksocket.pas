@@ -46,7 +46,6 @@ begin
     SetLinger(True, 10);
     Bind(Host, IntToStr(Port));
     Listen;
-    Assert(SocksLastError >= 0, 'SockLastError must be zero');
   end;
 end;
 
@@ -54,15 +53,13 @@ procedure TSocketLoop.Enable;
 var
   Request: TRequest;
 begin
-  Assert(Assigned(FSocket), 'FSocket must be assigned');
   FEnabled := True;
   repeat
-    if FSocket.CanRead(1000) then
+    if FSocket.CanRead(100) then
     begin
       Request := TRequest.Create(FSocket.Accept, FHost, FPort);
-      Assert(Request.FSocket.Socket > 0, 'Socket must be greater than zero');
-      Assert(Assigned(FCallback), 'FCallback must be assigned');
       FCallback(Request);
+      Continue;
     end;
   until FEnabled = False;
 end;

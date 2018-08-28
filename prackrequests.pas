@@ -5,28 +5,9 @@ unit PrackRequests;
 interface
 
 uses
-  Classes, SysUtils, FGL, BlckSock, Sockets, StrUtils;
+  Classes, SysUtils, FGL, BlckSock, Sockets, StrUtils, Prack;
 
 type
-  { TEnvItem }
-
-  TEnvItem = class
-    private
-      FName: String;
-      FValue: String;
-    public
-      constructor Create(Name: String; Value: String);
-      function GetName: String;
-      function GetValue: String;
-  end;
-
-  { TEnvItemList }
-
-  TCustomEnvItemList = specialize TFPGObjectList<TEnvItem>;
-  TEnvItemList = class(TCustomEnvItemList)
-    public
-      procedure Append(MoreItems: TEnvItemList);
-  end;
 
   { TRequest }
 
@@ -56,37 +37,6 @@ TRequestList = specialize TFPGObjectList<TRequest>;
 PRequestList = ^TRequestList;
 
 implementation
-
-{ TEnvItemList }
-
-procedure TEnvItemList.Append(MoreItems: TEnvItemList);
-var
-  Item: TEnvItem;
-begin
-  for Item in MoreItems do
-  begin
-    Add(Item);
-  end;
-  FreeAndNil(MoreItems);
-end;
-
-{ TEnvItem }
-
-constructor TEnvItem.Create(Name: String; Value: String);
-begin
-  FName := Name;
-  FValue := Value;
-end;
-
-function TEnvItem.GetName: String;
-begin
-  Result := FName;
-end;
-
-function TEnvItem.GetValue: String;
-begin
-  Result := FValue;
-end;
 
 { TRequest }
 

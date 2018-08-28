@@ -5,10 +5,12 @@ unit PrackCommon;
 interface
 
 uses
-  Classes, SysUtils, FGL, PrackRequests;
+  Classes, SysUtils, FGL;
 
 type
+
   { THeader }
+
   THeader = class
     public
       Name: String;

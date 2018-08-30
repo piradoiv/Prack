@@ -1,11 +1,11 @@
-unit PrackCommon;
+unit Common;
 
 {$mode objfpc}{$H+}
 
 interface
 
 uses
-  Classes, SysUtils, FGL;
+  Classes, SysUtils, FGL, BlckSock, Requests;
 
 type
 

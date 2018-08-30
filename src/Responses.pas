@@ -1,11 +1,11 @@
-unit PrackResponses;
+unit Responses;
 
 {$mode objfpc}{$H+}
 
 interface
 
 uses
-  Classes, SysUtils, FGL, PrackCommon, PrackRequests;
+  Classes, SysUtils, FGL, Common, Requests;
 
 type
 

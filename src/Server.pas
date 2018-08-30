@@ -1,4 +1,4 @@
-unit PrackServer;
+unit Server;
 
 {$mode objfpc}{$H+}
 
@@ -6,7 +6,7 @@ interface
 
 uses
   Classes, SysUtils, BlckSock,
-  PrackCommon, PrackRequests, PrackResponses;
+  Common, Requests, Responses;
 
 type
 

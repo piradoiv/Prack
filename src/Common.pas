@@ -1,11 +1,11 @@
-unit PrackCommon;
+unit Common;
 
 {$mode objfpc}{$H+}
 
 interface
 
 uses
-  Classes, SysUtils, FGL, BlckSock, PrackRequests;
+  Classes, SysUtils, FGL, BlckSock, Requests;
 
 type
   { THeader }

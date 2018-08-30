@@ -7,16 +7,16 @@ uses
   Cthreads, Cmem,
   {$ENDIF}
   Classes, SysUtils, BaseUnix,
-  PrackServer;
+  Server;
 
 var
-  Server: TPrackServer;
+  App: TPrackServer;
   Host: String;
   Port: Integer;
 
 procedure SigKillHandler(Sig : Longint); cdecl;
 begin
-  FreeAndNil(Server);
+  FreeAndNil(App);
   Halt(0);
 end;
 
@@ -31,7 +31,7 @@ begin
   end;
 
   Writeln('Starting server on http://', Host, ':', IntToStr(Port));
-  Server := TPrackServer.Create(Host, Port);
-  Server.Start;
+  App := TPrackServer.Create(Host, Port);
+  App.Start;
 end.
 

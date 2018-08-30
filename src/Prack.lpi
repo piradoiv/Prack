@@ -39,6 +39,7 @@
       <Unit2>
         <Filename Value="Requests.pas"/>
         <IsPartOfProject Value="True"/>
+        <UnitName Value="PrackRequests"/>
       </Unit2>
       <Unit3>
         <Filename Value="Responses.pas"/>

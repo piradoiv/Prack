@@ -27,46 +27,27 @@
         <PackageName Value="laz_synapse"/>
       </Item1>
     </RequiredPackages>
-    <Units Count="8">
+    <Units Count="5">
       <Unit0>
         <Filename Value="Prack.lpr"/>
         <IsPartOfProject Value="True"/>
       </Unit0>
       <Unit1>
-        <Filename Value="prackserver.pas"/>
+        <Filename Value="Common.pas"/>
         <IsPartOfProject Value="True"/>
-        <UnitName Value="PrackServer"/>
       </Unit1>
       <Unit2>
-        <Filename Value="prackresponses.pas"/>
+        <Filename Value="Requests.pas"/>
         <IsPartOfProject Value="True"/>
-        <UnitName Value="PrackResponses"/>
       </Unit2>
       <Unit3>
-        <Filename Value="prackcommon.pas"/>
+        <Filename Value="Responses.pas"/>
         <IsPartOfProject Value="True"/>
-        <UnitName Value="PrackCommon"/>
       </Unit3>
       <Unit4>
-        <Filename Value="prackrequests.pas"/>
+        <Filename Value="Server.pas"/>
         <IsPartOfProject Value="True"/>
-        <UnitName Value="PrackRequests"/>
       </Unit4>
-      <Unit5>
-        <Filename Value="prackapi.pas"/>
-        <IsPartOfProject Value="True"/>
-        <UnitName Value="PrackAPI"/>
-      </Unit5>
-      <Unit6>
-        <Filename Value="pracksocket.pas"/>
-        <IsPartOfProject Value="True"/>
-        <UnitName Value="PrackSocket"/>
-      </Unit6>
-      <Unit7>
-        <Filename Value="prack.pas"/>
-        <IsPartOfProject Value="True"/>
-        <UnitName Value="Prack"/>
-      </Unit7>
     </Units>
   </ProjectOptions>
   <CompilerOptions>

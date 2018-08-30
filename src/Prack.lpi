@@ -39,7 +39,6 @@
       <Unit2>
         <Filename Value="Requests.pas"/>
         <IsPartOfProject Value="True"/>
-        <UnitName Value="PrackRequests"/>
       </Unit2>
       <Unit3>
         <Filename Value="Responses.pas"/>
@@ -73,7 +72,9 @@
     </CodeGeneration>
     <Linking>
       <Debugging>
+        <UseHeaptrc Value="True"/>
         <StripSymbols Value="True"/>
+        <UseExternalDbgSyms Value="True"/>
       </Debugging>
     </Linking>
     <Other>
@@ -84,7 +85,7 @@
     </Other>
   </CompilerOptions>
   <Debugging>
-    <Exceptions Count="3">
+    <Exceptions Count="4">
       <Item1>
         <Name Value="EAbort"/>
       </Item1>
@@ -94,6 +95,9 @@
       <Item3>
         <Name Value="EFOpenError"/>
       </Item3>
+      <Item4>
+        <Name Value="EConvertError"/>
+      </Item4>
     </Exceptions>
   </Debugging>
 </CONFIG>

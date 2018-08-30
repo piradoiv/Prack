@@ -5,9 +5,28 @@ unit Requests;
 interface
 
 uses
-  Classes, SysUtils, FGL, BlckSock, Sockets, StrUtils, Prack;
+  Classes, SysUtils, FGL, BlckSock, Sockets, StrUtils;
 
 type
+
+  { TEnvItem }
+
+  TEnvItem = class
+    private
+      FName, FValue: String;
+    public
+      constructor Create(Name: String; Value: String);
+      function GetName: String;
+      function GetValue: String;
+  end;
+
+  { TEnvItemList }
+
+  TCustomEnvItemList = specialize TFPGObjectList<TEnvItem>;
+  TEnvItemList = class(TCustomEnvItemList)
+    public
+      procedure Append(ItemsToAdd: TEnvItemList);
+  end;
 
   { TRequest }
 
@@ -15,28 +34,67 @@ type
     private
       FServerName: String;
       FServerPort: Integer;
+      FResponse: TStringStream;
+      FCanBeSent: Boolean;
+      FSocket: TTCPBlockSocket;
+
       function BuildEnvironment: TEnvItemList;
       function BuildFirstLine(Line: String): TEnvItemList;
       function BuildGlobalEnvItems: TEnvItemList;
       function ExtractEnvItem(Line: String): TEnvItem;
     public
       Identifier: String;
-      FSocket: TTCPBlockSocket;
       Message: String;
       CreatedAt: TDateTime;
       Environment: TEnvItemList;
 
       constructor Create(Socket: TSocket; ServerName: String; ServerPort: Integer);
       procedure ExampleHandler;
+      function CanBeSent: Boolean;
+      function GetSocket: TTCPBlockSocket;
+      function GetResponse: TStringStream;
+      procedure ShipIt;
       destructor Destroy; override;
   end;
 
-{ TRequestList }
+  { TRequestList }
 
-TRequestList = specialize TFPGObjectList<TRequest>;
-PRequestList = ^TRequestList;
+  TRequestList = specialize TFPGObjectList<TRequest>;
+  PRequestList = ^TRequestList;
 
 implementation
+
+{ TEnvItemList }
+
+procedure TEnvItemList.Append(ItemsToAdd: TEnvItemList);
+var
+  Index: Integer;
+begin
+  for Index := 0 to ItemsToAdd.Count - 1 do
+  begin
+    Self.Add(ItemsToAdd.Items[Index]);
+  end;
+
+  FreeAndNil(ItemsToAdd);
+end;
+
+{ TEnvItem }
+
+constructor TEnvItem.Create(Name: String; Value: String);
+begin
+  Self.FName := Name;
+  Self.FValue := Value;
+end;
+
+function TEnvItem.GetName: String;
+begin
+  Result := FName;
+end;
+
+function TEnvItem.GetValue: String;
+begin
+  Result := FValue;
+end;
 
 { TRequest }
 
@@ -53,6 +111,8 @@ begin
   FSocket.Socket := Socket;
   FServerName := ServerName;
   FServerPort := ServerPort;
+  FCanBeSent := False;
+  FResponse := TStringStream.Create('');
   Assert(FSocket.Socket > 0, 'FSocket.Socket must be assigned');
   Environment := BuildEnvironment;
   Writeln('New Request: ' + Identifier);
@@ -136,6 +196,26 @@ begin
     SendString(CRLF);
     SendString('OK' + CRLF);
   end;
+end;
+
+function TRequest.CanBeSent: Boolean;
+begin
+  Result := FCanBeSent;
+end;
+
+function TRequest.GetSocket: TTCPBlockSocket;
+begin
+  Result := FSocket;
+end;
+
+function TRequest.GetResponse: TStringStream;
+begin
+  Result := FResponse;
+end;
+
+procedure TRequest.ShipIt;
+begin
+  Self.FCanBeSent := True;
 end;
 
 destructor TRequest.Destroy;

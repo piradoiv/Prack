@@ -6,7 +6,7 @@ interface
 
 uses
   Classes, SysUtils, BlckSock,
-  Common, Requests, Responses;
+  Requests;
 
 type
 
@@ -15,67 +15,116 @@ type
   TPrackServer = class
     private
       FHost: String;
-      FPort: Integer;
+      FGatewayPort: Integer;
+      FAPIPort: Integer;
       FRequestList: TRequestList;
-      FSocket: TTCPBlockSocket;
-
-      FResponsesThread: TPrackResponsesThread;
-
-      procedure StartResponsesThread;
-      procedure StartGatewayListenLoop;
-      procedure HandleGatewayConnection(Request: TRequest);
+      FRequestSocket: TTCPBlockSocket;
+      FAPISocket: TTCPBlockSocket;
     public
-      constructor Create(Host: String = '127.0.0.1'; Port: Integer = 80);
+      constructor Create(Host: String = '127.0.0.1'; GatewayPort: Integer = 80;
+        APIPort: Integer = 4242);
       procedure Start;
       destructor Destroy; override;
   end;
 
+  { TSocketCallback }
+
+  TSocketCallback = procedure(Request: TRequest) of object;
+
+  { TSocketLoop }
+
+  TSocketLoop = class(TThread)
+    private
+      FHost: String;
+      FPort: Integer;
+      FCallback: TSocketCallback;
+    public
+      constructor Create(Host: String; Port: Integer; Callback: TSocketCallback);
+      procedure Execute; override;
+      procedure Enable;
+  end;
+
 implementation
 
-{ TPrackServer }
+{ TSocketLoop }
 
-constructor TPrackServer.Create(Host: String; Port: Integer);
+constructor TSocketLoop.Create(Host: String; Port: Integer; Callback: TSocketCallback);
 begin
   FHost := Host;
   FPort := Port;
+  FCallback := Callback;
+end;
+
+procedure TSocketLoop.Execute;
+begin
+  Writeln('To do!');
+end;
+
+procedure TSocketLoop.Enable;
+begin
+
+end;
+
+{ TPrackServer }
+
+constructor TPrackServer.Create(Host: String; GatewayPort, APIPort: Integer);
+begin
+  FHost := Host;
+  FGatewayPort := GatewayPort;
+  FAPIPort := APIPort;
   FRequestList := TRequestList.Create(True);
-  FSocket := TTCPBlockSocket.Create;
-end;
-
-procedure TPrackServer.StartResponsesThread;
-begin
-  FResponsesThread := TPrackResponsesThread.Create(True);
-  with FResponsesThread do
-  begin
-    SetRequestList(@FRequestList);
-    FreeOnTerminate := False;
-    Start;
-  end;
-end;
-
-procedure TPrackServer.StartGatewayListenLoop;
-var
-  FSocketLoop: TSocketLoop;
-begin
-  FSocketLoop := TSocketLoop.Create(FHost, FPort, @HandleGatewayConnection);
-  FSocketLoop.Enable;
-end;
-
-procedure TPrackServer.HandleGatewayConnection(Request: TRequest);
-begin
-  FRequestList.Add(Request);
-  FResponsesThread.Start;
+  FRequestSocket := TTCPBlockSocket.Create;
+  FAPISocket := TTCPBlockSocket.Create;
 end;
 
 procedure TPrackServer.Start;
+var
+  GatewayRequest, ApiRequest: TRequest;
 begin
-  StartResponsesThread;
-  StartGatewayListenLoop;
+  FRequestSocket.Bind(FHost, IntToStr(FGatewayPort));
+  FRequestSocket.Listen;
+
+  FAPISocket.Bind(FHost, IntToStr(FAPIPort));
+  FAPISocket.Listen;
+
+  while True do
+  begin
+    if FRequestSocket.CanRead(100) then
+    begin
+      FRequestList.Add(TRequest.Create(FRequestSocket.Accept, FHost, FGatewayPort));
+    end;
+
+    if FAPISocket.CanRead(100) then
+    begin
+      ApiRequest := TRequest.Create(FAPISocket.Accept, FHost, FAPIPort);
+      GatewayRequest := FRequestList.First;
+      GatewayRequest.GetResponse.WriteString(
+        'HTTP/1.1 200 OK' + CRLF +
+        'Content-Type: text/html' + CRLF +
+        'Content-Length: 3' + CRLF +
+        'Connection: close' + CRLF + CRLF +
+        'OK' + CRLF
+      );
+
+      GatewayRequest.ShipIt;
+      FreeAndNil(ApiRequest);
+    end;
+
+    for GatewayRequest in FRequestList do
+    begin
+      if GatewayRequest.CanBeSent = False then Continue;
+      Assert(GatewayRequest.GetResponse.Size > 1, 'Response must be something');
+      Writeln(GatewayRequest.GetResponse.ReadString(GatewayRequest.GetResponse.Size));
+      GatewayRequest.GetSocket.SendString(GatewayRequest.GetResponse.ReadString(GatewayRequest.GetResponse.Size));
+      GatewayRequest.GetSocket.CloseSocket;
+      FRequestList.Extract(GatewayRequest).Free;
+    end;
+  end;
 end;
 
 destructor TPrackServer.Destroy;
 begin
-  FreeAndNil(FSocket);
+  FreeAndNil(FRequestSocket);
   Writeln(CRLF + '(╯°□°）╯︵ ┻━┻');
   inherited;
 end;

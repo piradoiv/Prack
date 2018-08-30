@@ -5,7 +5,7 @@ unit Common;
 interface
 
 uses
-  Classes, SysUtils, FGL, BlckSock, Requests;
+  Classes, SysUtils, FGL, BlckSock;
 
 type
 

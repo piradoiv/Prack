@@ -12,9 +12,9 @@ uses
 var
   App: TPrackServer;
   Host: String;
-  Port: Integer;
+  GatewayPort, APIPort: Integer;
 
-procedure SigKillHandler(Sig : Longint); cdecl;
+procedure SigKillHandler(Sig: Longint); cdecl;
 begin
   FreeAndNil(App);
   Halt(0);
@@ -25,13 +25,19 @@ begin
 
   if ParamStr(1) <> '' then Host := ParamStr(1) else Host := '127.0.0.1';
   try
-    Port := StrToInt(ParamStr(2));
+    GatewayPort := StrToInt(ParamStr(2));
   except
-    Port := 8080;
+    GatewayPort := 8080;
   end;
 
-  Writeln('Starting server on http://', Host, ':', IntToStr(Port));
-  App := TPrackServer.Create(Host, Port);
+  try
+    APIPort := StrToInt(ParamStr(3));
+  except
+    APIPort := 4242;
+  end;
+
+  Writeln('Starting server on http://', Host, ':', IntToStr(GatewayPort));
+  App := TPrackServer.Create(Host, GatewayPort, APIPort);
   App.Start;
 end.
 

@@ -1,5 +1,5 @@
-/lib
-/backup
-/PrackServerApp
-/PrackServerApp.lps
-/PrackServerApp.dSYM
+/src/lib
+/src/backup
+/src/PrackServerApp
+/src/PrackServerApp.lps
+/src/PrackServerApp.dSYM

@@ -1,4 +1,4 @@
-program PrackServerApp;
+program Prack;
 
 {$mode objfpc}{$H+}
 

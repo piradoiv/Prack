@@ -83,29 +83,23 @@ end;
 
 procedure TPrackServer.SendPendingResponses;
 var
-  Index: Integer;
   RequestToResponse: TRequest;
 begin
-  if FResponseQueue.Count = 0 then Exit;
-  for Index := 0 to FResponseQueue.Count -1 do
+  for RequestToResponse in FResponseQueue do
   begin
-    RequestToResponse := FResponseQueue.Extract(FResponseQueue.First);
     RequestToResponse.Socket.SendString(RequestToResponse.Response);
-    FreeAndNil(RequestToResponse);
+    FResponseQueue.Extract(RequestToResponse);
   end
 end;
 
 procedure TPrackServer.CleanRequestQueue;
 var
-  Index: Integer;
-  Age:   Integer;
+  Request: TRequest;
 begin
-  if FRequestQueue.Count = 0 then Exit;
-  for Index := FRequestQueue.Count - 1 downto 0 do
+  for Request in FRequestQueue do
   begin
-    Age := SecondsBetween(Now, FRequestQueue.Items[Index].UpdatedAt);
-    if Age < REQUEST_TIMEOUT_SECS then Continue;
-    FRequestQueue.Delete(Index);
+    if SecondsBetween(Now, Request.UpdatedAt) > REQUEST_TIMEOUT_SECS
+      then FRequestQueue.Extract(Request);
   end
 end;
 

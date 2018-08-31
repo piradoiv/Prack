@@ -84,23 +84,35 @@ end;
 procedure TPrackServer.SendPendingResponses;
 var
   RequestToResponse: TRequest;
+  ItemsToDestroy: TRequestList;
 begin
+  ItemsToDestroy := TRequestList.Create(True);
+
   for RequestToResponse in FResponseQueue do
   begin
     RequestToResponse.Socket.SendString(RequestToResponse.Response);
-    FResponseQueue.Extract(RequestToResponse);
-  end
+    ItemsToDestroy.Add(FResponseQueue.Extract(RequestToResponse));
+  end;
+
+  FreeAndNil(ItemsToDestroy);
 end;
 
 procedure TPrackServer.CleanRequestQueue;
 var
   Request: TRequest;
+  ItemsToDestroy: TRequestList;
 begin
+  ItemsToDestroy := TRequestList.Create(True);
   for Request in FRequestQueue do
   begin
-    if SecondsBetween(Now, Request.UpdatedAt) > REQUEST_TIMEOUT_SECS
-      then FRequestQueue.Extract(Request);
-  end
+    if SecondsBetween(Now, Request.UpdatedAt) > REQUEST_TIMEOUT_SECS then
+    begin
+      Request.Socket.CloseSocket;
+      ItemsToDestroy.Add(FRequestQueue.Extract(Request));
+    end;
+  end;
+
+  FreeAndNil(ItemsToDestroy);
 end;
 
 constructor TPrackServer.Create(GatewayHost: String; GatewayPort: Integer;

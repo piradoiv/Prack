@@ -169,7 +169,6 @@ end;
 
 destructor TRequest.Destroy;
 begin
-  Writeln('Destroying #' + Identifier);
   Socket.CloseSocket;
   FreeAndNil(Socket);
   FreeAndNil(Environment);

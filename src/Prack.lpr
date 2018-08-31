@@ -4,7 +4,8 @@ program Prack;
 
 uses
   {$IFDEF UNIX}
-  Cthreads, Cmem,
+  //Cthreads,
+  Cmem,
   {$ENDIF}
   Classes, SysUtils, BaseUnix,
   Server;
@@ -16,6 +17,7 @@ var
 
 procedure SigKillHandler(Sig: Longint); cdecl;
 begin
+  Sig.ToString;
   FreeAndNil(App);
   Halt(0);
 end;

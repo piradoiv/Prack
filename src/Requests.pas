@@ -34,33 +34,29 @@ type
     private
       FServerName: String;
       FServerPort: Integer;
-      FResponse: TStringStream;
-      FCanBeSent: Boolean;
-      FSocket: TTCPBlockSocket;
 
       function BuildEnvironment: TEnvItemList;
       function BuildFirstLine(Line: String): TEnvItemList;
       function BuildGlobalEnvItems: TEnvItemList;
       function ExtractEnvItem(Line: String): TEnvItem;
     public
-      Identifier: String;
-      Message: String;
-      CreatedAt: TDateTime;
+      Identifier:  String;
+      Message:     String;
+      Response:    String;
+      CanBeSent:   Boolean;
+      CreatedAt:   TDateTime;
+      UpdatedAt:   TDateTime;
       Environment: TEnvItemList;
+      Socket:      TTCPBlockSocket;
 
-      constructor Create(Socket: TSocket; ServerName: String; ServerPort: Integer);
-      procedure ExampleHandler;
-      function CanBeSent: Boolean;
-      function GetSocket: TTCPBlockSocket;
-      function GetResponse: TStringStream;
-      procedure ShipIt;
-      destructor Destroy; override;
+      constructor Create(ASocket: TSocket; ServerName: String;
+                         ServerPort: Integer);
+      destructor  Destroy; override;
   end;
 
   { TRequestList }
 
   TRequestList = specialize TFPGObjectList<TRequest>;
-  PRequestList = ^TRequestList;
 
 implementation
 
@@ -70,11 +66,7 @@ procedure TEnvItemList.Append(ItemsToAdd: TEnvItemList);
 var
   Index: Integer;
 begin
-  for Index := 0 to ItemsToAdd.Count - 1 do
-  begin
-    Self.Add(ItemsToAdd.Items[Index]);
-  end;
-
+  for Index := 0 to ItemsToAdd.Count - 1 do Self.Add(ItemsToAdd.Items[Index]);
   FreeAndNil(ItemsToAdd);
 end;
 
@@ -82,7 +74,7 @@ end;
 
 constructor TEnvItem.Create(Name: String; Value: String);
 begin
-  Self.FName := Name;
+  Self.FName  := Name;
   Self.FValue := Value;
 end;
 
@@ -98,28 +90,21 @@ end;
 
 { TRequest }
 
-constructor TRequest.Create(Socket: TSocket; ServerName: String; ServerPort: Integer);
+constructor TRequest.Create(ASocket: TSocket; ServerName: String; ServerPort: Integer);
 var
   Guid: TGuid;
-  EnvItem: TEnvItem;
 begin
-  Assert(Socket > 0, 'Socket seems to be invalid');
-  CreatedAt := Now;
   CreateGUID(Guid);
-  Identifier := GuidToString(Guid);
-  FSocket := TTCPBlockSocket.Create;
-  FSocket.Socket := Socket;
-  FServerName := ServerName;
-  FServerPort := ServerPort;
-  FCanBeSent := False;
-  FResponse := TStringStream.Create('');
-  Assert(FSocket.Socket > 0, 'FSocket.Socket must be assigned');
-  Environment := BuildEnvironment;
-  Writeln('New Request: ' + Identifier);
-  for EnvItem in Environment do
-  begin
-    Writeln(EnvItem.GetName, ' -> ', EnvItem.GetValue);
-  end;
+
+  CreatedAt      := Now;
+  Identifier     := GuidToString(Guid);
+  CanBeSent      := False;
+  Socket         := TTCPBlockSocket.Create;
+  Socket.Socket  := ASocket;
+  FServerName    := ServerName;
+  FServerPort    := ServerPort;
+  Environment    := BuildEnvironment;
+  UpdatedAt      := Now;
 end;
 
 function TRequest.BuildEnvironment: TEnvItemList;
@@ -131,12 +116,11 @@ begin
   LineNumber := 0;
   repeat
     Inc(LineNumber);
-    Line := FSocket.RecvString(100);
+    Line := Socket.RecvString(100);
     if Line = '' then Continue;
-    if LineNumber = 1 then
-      Result.Append(BuildFirstLine(Line))
-    else
-      Result.Add(ExtractEnvItem(Line));
+    if LineNumber = 1
+      then Result.Append(BuildFirstLine(Line))
+      else Result.Add(ExtractEnvItem(Line));
   until Line = '';
 
   Result.Append(BuildGlobalEnvItems);
@@ -183,45 +167,11 @@ begin
   Result := TEnvItem.Create(S, Trim(ExtractDelimited(2, Line, [':'])));
 end;
 
-procedure TRequest.ExampleHandler;
-begin
-  Assert(Assigned(FSocket), 'FSocket must be assigned');
-  Assert(FSocket.Socket > 0, 'FSocket.Socket must be a valid socket');
-  with FSocket do
-  begin
-    SendString('HTTP/1.1 200 OK' + CRLF);
-    SendString('Connection: close' + CRLF);
-    SendString('Content-Type: text/html' + CRLF);
-    SendString('Content-Length: 4' + CRLF);
-    SendString(CRLF);
-    SendString('OK' + CRLF);
-  end;
-end;
-
-function TRequest.CanBeSent: Boolean;
-begin
-  Result := FCanBeSent;
-end;
-
-function TRequest.GetSocket: TTCPBlockSocket;
-begin
-  Result := FSocket;
-end;
-
-function TRequest.GetResponse: TStringStream;
-begin
-  Result := FResponse;
-end;
-
-procedure TRequest.ShipIt;
-begin
-  Self.FCanBeSent := True;
-end;
-
 destructor TRequest.Destroy;
 begin
-  FSocket.CloseSocket;
-  FreeAndNil(FSocket);
+  Writeln('Destroying #' + Identifier);
+  Socket.CloseSocket;
+  FreeAndNil(Socket);
   FreeAndNil(Environment);
   inherited;
 end;

@@ -5,8 +5,16 @@ unit Server;
 interface
 
 uses
-  Classes, SysUtils, BlckSock,
+  Classes, SysUtils, BlckSock, DateUtils,
   Requests;
+
+const
+  SOCKET_READ_TIMEOUT  = 50;
+  REQUEST_TIMEOUT_SECS = 30;
+  DEFAULT_GATEWAY_HOST = '127.0.0.1';
+  DEFAULT_GATEWAY_PORT = 80;
+  DEFAULT_API_HOST     = '127.0.0.1';
+  DEFAULT_API_PORT     = 4242;
 
 type
 
@@ -14,118 +22,128 @@ type
 
   TPrackServer = class
     private
-      FHost: String;
-      FGatewayPort: Integer;
-      FAPIPort: Integer;
-      FRequestList: TRequestList;
-      FRequestSocket: TTCPBlockSocket;
-      FAPISocket: TTCPBlockSocket;
+      FGatewayHost: String;
+      FGatewayPort, FAPIPort: Integer;
+      FRequestQueue, FResponseQueue: TRequestList;
+      FRequestSocket, FAPISocket: TTCPBlockSocket;
+
+      procedure ProcessGatewayRequest;
+      procedure ProcessAPIRequest;
+      procedure SendPendingResponses;
+      procedure CleanRequestQueue;
     public
-      constructor Create(Host: String = '127.0.0.1'; GatewayPort: Integer = 80;
-        APIPort: Integer = 4242);
+      constructor Create(
+        GatewayHost: String  = DEFAULT_GATEWAY_HOST;
+        GatewayPort: Integer = DEFAULT_GATEWAY_PORT;
+        APIPort: Integer = DEFAULT_API_PORT
+      );
       procedure Start;
       destructor Destroy; override;
   end;
 
-  { TSocketCallback }
-
-  TSocketCallback = procedure(Request: TRequest) of object;
-
-  { TSocketLoop }
-
-  TSocketLoop = class(TThread)
-    private
-      FHost: String;
-      FPort: Integer;
-      FCallback: TSocketCallback;
-    public
-      constructor Create(Host: String; Port: Integer; Callback: TSocketCallback);
-      procedure Execute; override;
-      procedure Enable;
-  end;
-
 implementation
-
-{ TSocketLoop }
-
-constructor TSocketLoop.Create(Host: String; Port: Integer; Callback: TSocketCallback);
-begin
-  FHost := Host;
-  FPort := Port;
-  FCallback := Callback;
-end;
-
-procedure TSocketLoop.Execute;
-begin
-  Writeln('To do!');
-end;
-
-procedure TSocketLoop.Enable;
-begin
-
-end;
 
 { TPrackServer }
 
-constructor TPrackServer.Create(Host: String; GatewayPort, APIPort: Integer);
+procedure TPrackServer.ProcessGatewayRequest;
 begin
-  FHost := Host;
-  FGatewayPort := GatewayPort;
-  FAPIPort := APIPort;
-  FRequestList := TRequestList.Create(True);
+  if FRequestSocket.CanRead(SOCKET_READ_TIMEOUT)
+    then FRequestQueue.Add(TRequest.Create(
+      FRequestSocket.Accept,
+      FGatewayHost,
+      FGatewayPort
+    ));
+end;
+
+procedure TPrackServer.ProcessAPIRequest;
+var
+  ApiRequest, GatewayRequest: TRequest;
+begin
+  if FAPISocket.CanRead(SOCKET_READ_TIMEOUT) then
+  begin
+    ApiRequest := TRequest.Create(FAPISocket.Accept, FGatewayHost, FAPIPort);
+
+    if FRequestQueue.Count > 0 then
+    begin
+      GatewayRequest := FRequestQueue.Extract(FRequestQueue.First);
+      GatewayRequest.Response :=
+        'HTTP/1.1 200 OK' + CRLF +
+        'Content-Type: text/html' + CRLF +
+        'Content-Length: 4' + CRLF +
+        'Connection: close' + CRLF + CRLF +
+        'OK' + CRLF;
+
+      GatewayRequest.CanBeSent := True;
+      FResponseQueue.Add(GatewayRequest);
+    end;
+
+    FreeAndNil(ApiRequest);
+  end;
+end;
+
+procedure TPrackServer.SendPendingResponses;
+var
+  Index: Integer;
+  RequestToResponse: TRequest;
+begin
+  if FResponseQueue.Count = 0 then Exit;
+  for Index := 0 to FResponseQueue.Count -1 do
+  begin
+    RequestToResponse := FResponseQueue.Extract(FResponseQueue.First);
+    RequestToResponse.Socket.SendString(RequestToResponse.Response);
+    FreeAndNil(RequestToResponse);
+  end
+end;
+
+procedure TPrackServer.CleanRequestQueue;
+var
+  Index: Integer;
+  Age:   Integer;
+begin
+  if FRequestQueue.Count = 0 then Exit;
+  for Index := FRequestQueue.Count - 1 downto 0 do
+  begin
+    Age := SecondsBetween(Now, FRequestQueue.Items[Index].UpdatedAt);
+    if Age < REQUEST_TIMEOUT_SECS then Continue;
+    FRequestQueue.Delete(Index);
+  end
+end;
+
+constructor TPrackServer.Create(GatewayHost: String; GatewayPort: Integer;
+  APIPort: Integer);
+begin
+  FGatewayHost   := GatewayHost;
+  FGatewayPort   := GatewayPort;
+  FAPIPort       := APIPort;
+  FRequestQueue  := TRequestList.Create(True);
+  FResponseQueue := TRequestList.Create(True);
   FRequestSocket := TTCPBlockSocket.Create;
-  FAPISocket := TTCPBlockSocket.Create;
+  FAPISocket     := TTCPBlockSocket.Create;
 end;
 
 procedure TPrackServer.Start;
-var
-  GatewayRequest, ApiRequest: TRequest;
 begin
-  FRequestSocket.Bind(FHost, IntToStr(FGatewayPort));
+  FRequestSocket.Bind(FGatewayHost, IntToStr(FGatewayPort));
   FRequestSocket.Listen;
 
-  FAPISocket.Bind(FHost, IntToStr(FAPIPort));
+  FAPISocket.Bind(FGatewayHost, IntToStr(FAPIPort));
   FAPISocket.Listen;
 
   while True do
   begin
-    if FRequestSocket.CanRead(100) then
-    begin
-      FRequestList.Add(TRequest.Create(FRequestSocket.Accept, FHost, FGatewayPort));
-    end;
-
-    if FAPISocket.CanRead(100) then
-    begin
-      ApiRequest := TRequest.Create(FAPISocket.Accept, FHost, FAPIPort);
-      GatewayRequest := FRequestList.First;
-      GatewayRequest.GetResponse.WriteString(
-        'HTTP/1.1 200 OK' + CRLF +
-        'Content-Type: text/html' + CRLF +
-        'Content-Length: 3' + CRLF +
-        'Connection: close' + CRLF + CRLF +
-        'OK' + CRLF
-      );
-
-      GatewayRequest.ShipIt;
-      FreeAndNil(ApiRequest);
-    end;
-
-    for GatewayRequest in FRequestList do
-    begin
-      if GatewayRequest.CanBeSent = False then Continue;
-      Assert(GatewayRequest.GetResponse.Size > 1, 'Response must be something');
-      Writeln(GatewayRequest.GetResponse.ReadString(GatewayRequest.GetResponse.Size));
-      GatewayRequest.GetSocket.SendString(GatewayRequest.GetResponse.ReadString(GatewayRequest.GetResponse.Size));
-      GatewayRequest.GetSocket.CloseSocket;
-      FRequestList.Extract(GatewayRequest).Free;
-    end;
+    ProcessGatewayRequest;
+    ProcessAPIRequest;
+    SendPendingResponses;
+    CleanRequestQueue;
   end;
 end;
 
 destructor TPrackServer.Destroy;
 begin
-  FreeAndNil(FRequestSocket);
   Writeln(CRLF + '(╯°□°）╯︵ ┻━┻');
+  FreeAndNil(FRequestSocket);
+  FreeAndNil(FRequestQueue);
+  FreeAndNil(FResponseQueue);
   inherited;
 end;
 

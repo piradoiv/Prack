@@ -21,8 +21,8 @@ type
       procedure TestCanCreate;
       procedure TestCanAddNewRequests;
       procedure TestCanGetQueueStats;
-      procedure TestCanSendRequestsThroughTheApi;
-      procedure TestCanEnqueueResponsesFromTheApi;
+      procedure TestCanSendRequestsToAppServers;
+      procedure TestCanEnqueueResponses;
       procedure TestCanSendBackReadyResponses;
       procedure TestRequestsCanTimeout;
       procedure TestCanCleanupFailedRequests;
@@ -64,7 +64,7 @@ begin
   AssertEquals(1, PrackQueue.QueueLength);
 end;
 
-procedure TTestQueue.TestCanSendRequestsThroughTheApi;
+procedure TTestQueue.TestCanSendRequestsToAppServers;
 var
   Request: TRequest;
 begin
@@ -77,7 +77,7 @@ begin
   AssertEquals(1, PrackQueue.ProcessingLength);
 end;
 
-procedure TTestQueue.TestCanEnqueueResponsesFromTheApi;
+procedure TTestQueue.TestCanEnqueueResponses;
 var
   Request: TRequest;
 begin

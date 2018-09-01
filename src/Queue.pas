@@ -18,9 +18,9 @@ type
     private
       FQueue: TRequestList;
 
-      function    Count(Status: TRequestStatus): Integer;
+      function    Count(Status: TRequestStatus):            Integer;
       function    GetFirstByStatus(Status: TRequestSTatus): TRequest;
-      function    FindRequestById(Identifier: String): TRequest;
+      function    FindRequestById(Identifier: String):      TRequest;
 
     public
       RequestTimeoutInSeconds: Integer;
@@ -34,14 +34,14 @@ type
       procedure   WillDeliver(Identifier: String);
       procedure   CheckTimeoutRequests;
       procedure   CleanupRequests;
-      function    GetFirstPending: TRequest;
-      function    GetFirstReady: TRequest;
-      function    QueueLength: Integer;
-      function    IncomingLength: Integer;
+      function    GetFirstPending:  TRequest;
+      function    GetFirstReady:    TRequest;
+      function    QueueLength:      Integer;
+      function    IncomingLength:   Integer;
       function    ProcessingLength: Integer;
-      function    ReadyLength: Integer;
-      function    DeliveredLength: Integer;
-      function    FailedLength: Integer;
+      function    ReadyLength:      Integer;
+      function    DeliveredLength:  Integer;
+      function    FailedLength:     Integer;
   end;
 
 implementation

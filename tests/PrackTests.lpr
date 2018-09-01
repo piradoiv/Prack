@@ -10,8 +10,6 @@ type
   { TMyTestRunner }
 
   TMyTestRunner = class(TTestRunner)
-  protected
-  // override the protected methods of TTestRunner to customize its behavior
   end;
 
 var

@@ -5,7 +5,7 @@ program Prack;
 uses
   {$IFDEF UNIX}
   //Cthreads,
-  Cmem,
+  //Cmem,
   {$ENDIF}
   Classes, SysUtils, BaseUnix,
   Server;
@@ -23,7 +23,7 @@ begin
 end;
 
 begin
-  FpSignal(SIGINT, @SigKillHandler);
+  //FpSignal(SIGINT, @SigKillHandler);
 
   if ParamStr(1) <> '' then Host := ParamStr(1) else Host := '127.0.0.1';
   try
@@ -38,7 +38,8 @@ begin
     APIPort := 4242;
   end;
 
-  Writeln('Starting server on http://', Host, ':', IntToStr(GatewayPort));
+  Writeln('Starting public server on http://', Host, ':', IntToStr(GatewayPort),
+    '; API Server on http://', Host, ':', APIPort);
   App := TPrackServer.Create(Host, GatewayPort, APIPort);
   App.Start;
 end.

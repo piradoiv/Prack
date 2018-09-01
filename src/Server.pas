@@ -5,7 +5,7 @@ unit Server;
 interface
 
 uses
-  Classes, SysUtils, BlckSock, DateUtils,
+  Classes, SysUtils, BlckSock, DateUtils, fpJSON, jsonparser,
   Requests;
 
 const
@@ -33,7 +33,7 @@ type
       procedure CleanRequestQueue;
     public
       constructor Create(
-        GatewayHost: String  = DEFAULT_GATEWAY_HOST;
+        GatewayHost: String = DEFAULT_GATEWAY_HOST;
         GatewayPort: Integer = DEFAULT_GATEWAY_PORT;
         APIPort: Integer = DEFAULT_API_PORT
       );
@@ -47,37 +47,63 @@ implementation
 
 procedure TPrackServer.ProcessGatewayRequest;
 begin
-  if FRequestSocket.CanRead(SOCKET_READ_TIMEOUT)
-    then FRequestQueue.Add(TRequest.Create(
-      FRequestSocket.Accept,
-      FGatewayHost,
-      FGatewayPort
-    ));
+  //if FRequestSocket.CanRead(SOCKET_READ_TIMEOUT)
+  //  then FRequestQueue.Add(TRequest.Create(
+  //    FRequestSocket.Accept,
+  //    FGatewayHost,
+  //    FGatewayPort
+  //  ));
 end;
 
 procedure TPrackServer.ProcessAPIRequest;
 var
   ApiRequest, GatewayRequest: TRequest;
+  JSON: TJSONData;
+  RawRequest: String;
 begin
   if FAPISocket.CanRead(SOCKET_READ_TIMEOUT) then
   begin
-    ApiRequest := TRequest.Create(FAPISocket.Accept, FGatewayHost, FAPIPort);
+    Writeln('< Receiving from API Port');
+    if FRequestQueue.Count = 0 then Exit;
 
-    if FRequestQueue.Count > 0 then
-    begin
-      GatewayRequest := FRequestQueue.Extract(FRequestQueue.First);
-      GatewayRequest.Response :=
-        'HTTP/1.1 200 OK' + CRLF +
-        'Content-Type: text/html' + CRLF +
-        'Content-Length: 4' + CRLF +
-        'Connection: close' + CRLF + CRLF +
-        'OK' + CRLF;
+    try
+      ApiRequest := TRequest.Create(FGatewayHost, FAPIPort, RawRequest);
+      Writeln('Message: "', ApiRequest.Message, '"');
+      Exit;
 
-      GatewayRequest.CanBeSent := True;
-      FResponseQueue.Add(GatewayRequest);
+      if (ApiRequest.Env('REQUEST_METHOD') = 'GET') and
+        (ApiRequest.Env('REQUEST_URL') = '/api/v1/request') then
+      begin
+        Writeln('< API: GET Request');
+
+        GatewayRequest := FRequestQueue.GetNext;
+        if not Assigned(GatewayRequest) then Exit;
+        GatewayRequest.UpdatedAt := Now;
+        GatewayRequest.Status := rsProcessing;
+
+        Writeln('< Sending Request #', GatewayRequest.Identifier);
+        Exit;
+      end;
+
+      if (ApiRequest.Env('REQUEST_METHOD') = 'POST') and
+        (ApiRequest.Env('REQUEST_URL') = '/api/v1/request') then
+      begin
+        Writeln('< API: POST Request');
+        try
+          try
+            JSON := GetJSON(ApiRequest.Message);
+            Writeln('< Got a response for #', JSON.FindPath('REQUEST_ID').AsString);
+          except
+            Writeln('!!! Error parsing the request');
+          end;
+        finally
+          FreeAndNil(JSON);
+        end;
+      end;
+    finally
+      //ApiRequest.Socket.CloseSocket;
+      FreeAndNil(ApiRequest);
     end;
-
-    FreeAndNil(ApiRequest);
   end;
 end;
 
@@ -90,7 +116,7 @@ begin
 
   for RequestToResponse in FResponseQueue do
   begin
-    RequestToResponse.Socket.SendString(RequestToResponse.Response);
+    //RequestToResponse.Socket.SendString(RequestToResponse.Response);
     ItemsToDestroy.Add(FResponseQueue.Extract(RequestToResponse));
   end;
 
@@ -107,7 +133,7 @@ begin
   begin
     if SecondsBetween(Now, Request.UpdatedAt) > REQUEST_TIMEOUT_SECS then
     begin
-      Request.Socket.CloseSocket;
+      //Request.Socket.CloseSocket;
       ItemsToDestroy.Add(FRequestQueue.Extract(Request));
     end;
   end;
@@ -146,10 +172,9 @@ end;
 
 destructor TPrackServer.Destroy;
 begin
-  Writeln(CRLF + '(╯°□°）╯︵ ┻━┻');
-  FreeAndNil(FRequestSocket);
-  FreeAndNil(FRequestQueue);
-  FreeAndNil(FResponseQueue);
+  Writeln(CRLF, '(╯°□°）╯︵ ┻━┻');
+  FRequestSocket.CloseSocket;
+  FAPISocket.CloseSocket;
   inherited;
 end;
 

@@ -28,25 +28,37 @@ type
       constructor Create;
       destructor  Destroy; override;
 
-      procedure   AddNewRequest(Request: TRequest);
+      procedure   Add(Request: TRequest);
+      procedure   AttachResponse(Identifier: String; Response: String);
+      procedure   WillProcess(Identifier: String);
+      procedure   WillDeliver(Identifier: String);
       procedure   CheckTimeoutRequests;
       procedure   CleanupRequests;
-      procedure   ApiPostResponse(Request: TRequest);
-      procedure   WillProcess(Request: TRequest);
-      procedure   WillDeliver(Request: TRequest);
-      function    QueueLength: Integer;
-      function    PendingLength: Integer;
-      function    ProcessingLength: Integer;
-      function    ReadyLength: Integer;
-      function    FailedLength: Integer;
-      function    DeliveredLength: Integer;
       function    GetFirstPending: TRequest;
       function    GetFirstReady: TRequest;
+      function    QueueLength: Integer;
+      function    IncomingLength: Integer;
+      function    ProcessingLength: Integer;
+      function    ReadyLength: Integer;
+      function    DeliveredLength: Integer;
+      function    FailedLength: Integer;
   end;
 
 implementation
 
 { TPrackQueue }
+
+constructor TPrackQueue.Create;
+begin
+  FQueue := TRequestList.Create(True);
+  RequestTimeoutInSeconds := DEFAULT_TIMEOUT;
+end;
+
+destructor TPrackQueue.Destroy;
+begin
+  FreeAndNil(FQueue);
+  inherited;
+end;
 
 function TPrackQueue.Count(Status: TRequestStatus): Integer;
 var
@@ -82,18 +94,12 @@ begin
   end;
 end;
 
-constructor TPrackQueue.Create;
-begin
-  FQueue := TRequestList.Create(True);
-  RequestTimeoutInSeconds := DEFAULT_TIMEOUT;
-end;
-
 function TPrackQueue.QueueLength: Integer;
 begin
   Result := FQueue.Count;
 end;
 
-function TPrackQueue.PendingLength: Integer;
+function TPrackQueue.IncomingLength: Integer;
 begin
   Result := Count(rsIncoming);
 end;
@@ -128,29 +134,41 @@ begin
   Result := GetFirstByStatus(rsReady);
 end;
 
-procedure TPrackQueue.AddNewRequest(Request: TRequest);
+procedure TPrackQueue.Add(Request: TRequest);
 begin
   FQueue.Add(Request);
 end;
 
-procedure TPrackQueue.WillProcess(Request: TRequest);
+procedure TPrackQueue.WillProcess(Identifier: String);
+var
+  Request: TRequest;
 begin
+  Request := Self.FindRequestById(Identifier);
+  if not Assigned(Request) then Exit;
   if Request.Status = rsIncoming then Request.Status := rsProcessing;
 end;
 
-procedure TPrackQueue.WillDeliver(Request: TRequest);
+procedure TPrackQueue.WillDeliver(Identifier: String);
+var
+  Request: TRequest;
 begin
+  Request := Self.FindRequestById(Identifier);
+  if not Assigned(Request) then Exit;
   if Request.Status = rsReady then Request.Status := rsDelivered;
 end;
 
-procedure TPrackQueue.ApiPostResponse(Request: TRequest);
+procedure TPrackQueue.AttachResponse(Identifier: String; Response: String);
 var
-  GatewayRequest: TRequest;
+  Request: TRequest;
 begin
-  GatewayRequest := FindRequestById(Request.Identifier);
-  if not Assigned(GatewayRequest) then Exit;
-  GatewayRequest.Response := Request.Response;
-  GatewayRequest.Status := rsReady;
+  Request := FindRequestById(Identifier);
+
+  if (not Assigned(Request))
+  or (Request.Status <> rsProcessing)
+    then Exit;
+
+  Request.Response := Response;
+  Request.Status   := rsReady;
 end;
 
 procedure TPrackQueue.CheckTimeoutRequests;
@@ -169,12 +187,6 @@ begin
   for Index := FQueue.Count - 1 downto 0 do
     if FQueue.Items[Index].Status = rsFailed
     then FQueue.Delete(Index);
-end;
-
-destructor TPrackQueue.Destroy;
-begin
-  FreeAndNil(FQueue);
-  inherited;
 end;
 
 end.

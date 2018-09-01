@@ -19,7 +19,7 @@ type
 
     published
       procedure TestCanCreate;
-      procedure TestCanAddNewGatewayRequests;
+      procedure TestCanAddNewRequests;
       procedure TestCanGetQueueStats;
       procedure TestCanSendRequestsThroughTheApi;
       procedure TestCanEnqueueResponsesFromTheApi;
@@ -57,10 +57,10 @@ begin
   AssertTrue(Assigned(PrackQueue));
 end;
 
-procedure TTestQueue.TestCanAddNewGatewayRequests;
+procedure TTestQueue.TestCanAddNewRequests;
 begin
   AssertEquals(0, PrackQueue.QueueLength);
-  PrackQueue.AddNewRequest(GenerateRequest);
+  PrackQueue.Add(GenerateRequest);
   AssertEquals(1, PrackQueue.QueueLength);
 end;
 
@@ -68,11 +68,11 @@ procedure TTestQueue.TestCanSendRequestsThroughTheApi;
 var
   Request: TRequest;
 begin
-  PrackQueue.AddNewRequest(GenerateRequest);
+  PrackQueue.Add(GenerateRequest);
   Request := PrackQueue.GetFirstPending;
   Assert(Request.Status = rsIncoming);
   AssertEquals(0, PrackQueue.ProcessingLength);
-  PrackQueue.WillProcess(Request);
+  PrackQueue.WillProcess(Request.Identifier);
   Assert(Request.Status = rsProcessing);
   AssertEquals(1, PrackQueue.ProcessingLength);
 end;
@@ -81,21 +81,21 @@ procedure TTestQueue.TestCanEnqueueResponsesFromTheApi;
 var
   Request: TRequest;
 begin
-  PrackQueue.AddNewRequest(GenerateRequest(rsIncoming));
-  PrackQueue.AddNewRequest(GenerateRequest(rsProcessing));
-  AssertEquals(1, PrackQueue.PendingLength);
+  PrackQueue.Add(GenerateRequest(rsIncoming));
+  PrackQueue.Add(GenerateRequest(rsProcessing));
+  AssertEquals(1, PrackQueue.IncomingLength);
   AssertEquals(1, PrackQueue.ProcessingLength);
   AssertEquals(0, PrackQueue.ReadyLength);
 
   Request := PrackQueue.GetFirstPending;
   Request.Status := rsProcessing;
-  PrackQueue.WillProcess(Request);
-  AssertEquals(0, PrackQueue.PendingLength);
+  PrackQueue.WillProcess(Request.Identifier);
+  AssertEquals(0, PrackQueue.IncomingLength);
   AssertEquals(2, PrackQueue.ProcessingLength);
   AssertEquals(0, PrackQueue.ReadyLength);
 
-  PrackQueue.ApiPostResponse(Request);
-  AssertEquals(0, PrackQueue.PendingLength);
+  PrackQueue.AttachResponse(Request.Identifier, 'Hello, World!');
+  AssertEquals(0, PrackQueue.IncomingLength);
   AssertEquals(1, PrackQueue.ProcessingLength);
   AssertEquals(1, PrackQueue.ReadyLength);
 end;
@@ -106,11 +106,11 @@ var
 begin
   Request := GenerateRequest;
   Request.Status := rsReady;
-  PrackQueue.AddNewRequest(Request);
+  PrackQueue.Add(Request);
   AssertEquals(1, PrackQueue.ReadyLength);
 
   Request := PrackQueue.GetFirstReady;
-  PrackQueue.WillDeliver(Request);
+  PrackQueue.WillDeliver(Request.Identifier);
 end;
 
 procedure TTestQueue.TestRequestsCanTimeout;
@@ -120,14 +120,14 @@ begin
   Request := GenerateRequest;
   Request.CreatedAt := IncHour(Now, -5);
   Request.UpdatedAt := Request.CreatedAt;
-  PrackQueue.AddNewRequest(Request);
+  PrackQueue.Add(Request);
 
   Request := GenerateRequest;
   Request.CreatedAt := IncSecond(Now, -2);
   Request.UpdatedAt := Request.CreatedAt;
-  PrackQueue.AddNewRequest(Request);
+  PrackQueue.Add(Request);
 
-  PrackQueue.AddNewRequest(GenerateRequest);
+  PrackQueue.Add(GenerateRequest);
 
   AssertEquals(0, PrackQueue.FailedLength);
   AssertEquals(3, PrackQueue.QueueLength);
@@ -140,10 +140,10 @@ end;
 
 procedure TTestQueue.TestCanCleanupFailedRequests;
 begin
-  PrackQueue.AddNewRequest(GenerateRequest(rsFailed));
-  PrackQueue.AddNewRequest(GenerateRequest(rsIncoming));
-  PrackQueue.AddNewRequest(GenerateRequest(rsProcessing));
-  PrackQueue.AddNewRequest(GenerateRequest(rsFailed));
+  PrackQueue.Add(GenerateRequest(rsFailed));
+  PrackQueue.Add(GenerateRequest(rsIncoming));
+  PrackQueue.Add(GenerateRequest(rsProcessing));
+  PrackQueue.Add(GenerateRequest(rsFailed));
 
   AssertEquals(4, PrackQueue.QueueLength);
   AssertEquals(2, PrackQueue.FailedLength);
@@ -160,40 +160,45 @@ var
 begin
   Request := GenerateRequest;
   Request.Status := rsReady;
-  PrackQueue.AddNewRequest(Request);
+  PrackQueue.Add(Request);
+
   Assert(Request.Status = rsReady);
-  PrackQueue.WillProcess(Request);
+  PrackQueue.WillProcess(Request.Identifier);
   Assert(Request.Status = rsReady);
 
   Request.Status := rsIncoming;
-  PrackQueue.WillDeliver(Request);
+  PrackQueue.WillDeliver(Request.Identifier);
   Assert(Request.Status = rsIncoming);
+
+  PrackQueue.AttachResponse(Request.Identifier, 'Hello, World!');
+  Assert(Request.Status = rsIncoming);
+  AssertEquals('', Request.Response);
 end;
 
 procedure TTestQueue.TestCanGetQueueStats;
 var
   Request: TRequest;
 begin
-  AssertEquals(0, PrackQueue.PendingLength);
-  PrackQueue.AddNewRequest(GenerateRequest);
-  AssertEquals(1, PrackQueue.PendingLength);
+  AssertEquals(0, PrackQueue.IncomingLength);
+  PrackQueue.Add(GenerateRequest);
+  AssertEquals(1, PrackQueue.IncomingLength);
 
   AssertEquals(0, PrackQueue.ProcessingLength);
   Request := GenerateRequest;
   Request.Status := rsProcessing;
-  PrackQueue.AddNewRequest(Request);
+  PrackQueue.Add(Request);
   AssertEquals(1, PrackQueue.ProcessingLength);
 
   AssertEquals(0, PrackQueue.ReadyLength);
   Request := GenerateRequest;
   Request.Status := rsReady;
-  PrackQueue.AddNewRequest(Request);
+  PrackQueue.Add(Request);
   AssertEquals(1, PrackQueue.ReadyLength);
 
   AssertEquals(0, PrackQueue.DeliveredLength);
   Request := GenerateRequest;
   Request.Status := rsDelivered;
-  PrackQueue.AddNewRequest(Request);
+  PrackQueue.Add(Request);
   AssertEquals(1, PrackQueue.DeliveredLength);
 
   AssertEquals(4, PrackQueue.QueueLength);

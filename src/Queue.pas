@@ -185,8 +185,9 @@ var
   Index: Integer;
 begin
   for Index := FQueue.Count - 1 downto 0 do
-    if FQueue.Items[Index].Status = rsFailed
-    then FQueue.Delete(Index);
+    if (FQueue.Items[Index].Status = rsDelivered)
+    or (FQueue.Items[Index].Status = rsFailed)
+      then FQueue.Delete(Index);
 end;
 
 end.

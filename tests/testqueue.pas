@@ -7,6 +7,9 @@ interface
 uses
   Classes, SysUtils, fpcunit, testregistry, Queue, Requests, DateUtils;
 
+const
+  EXAMPLE_RESPONSE = 'Always bring your towel!';
+
 type
 
   { TTestQueue }
@@ -25,7 +28,7 @@ type
       procedure TestCanEnqueueResponses;
       procedure TestCanSendBackReadyResponses;
       procedure TestRequestsCanTimeout;
-      procedure TestCanCleanupFailedRequests;
+      procedure TestCanCleanupRequests;
       procedure TestCanNotSwitchToAnInvalidState;
   end;
 
@@ -94,7 +97,7 @@ begin
   AssertEquals(2, PrackQueue.ProcessingLength);
   AssertEquals(0, PrackQueue.ReadyLength);
 
-  PrackQueue.AttachResponse(Request.Identifier, 'Hello, World!');
+  PrackQueue.AttachResponse(Request.Identifier, EXAMPLE_RESPONSE);
   AssertEquals(0, PrackQueue.IncomingLength);
   AssertEquals(1, PrackQueue.ProcessingLength);
   AssertEquals(1, PrackQueue.ReadyLength);
@@ -138,20 +141,24 @@ begin
   AssertEquals(3, PrackQueue.QueueLength);
 end;
 
-procedure TTestQueue.TestCanCleanupFailedRequests;
+procedure TTestQueue.TestCanCleanupRequests;
 begin
   PrackQueue.Add(GenerateRequest(rsFailed));
   PrackQueue.Add(GenerateRequest(rsIncoming));
   PrackQueue.Add(GenerateRequest(rsProcessing));
+  PrackQueue.Add(GenerateRequest(rsReady));
+  PrackQueue.Add(GenerateRequest(rsDelivered));
   PrackQueue.Add(GenerateRequest(rsFailed));
 
-  AssertEquals(4, PrackQueue.QueueLength);
+  AssertEquals(6, PrackQueue.QueueLength);
   AssertEquals(2, PrackQueue.FailedLength);
+  AssertEquals(1, PrackQueue.DeliveredLength);
 
   PrackQueue.CleanupRequests;
 
-  AssertEquals(2, PrackQueue.QueueLength);
+  AssertEquals(3, PrackQueue.QueueLength);
   AssertEquals(0, PrackQueue.FailedLength);
+  AssertEquals(0, PrackQueue.DeliveredLength);
 end;
 
 procedure TTestQueue.TestCanNotSwitchToAnInvalidState;
@@ -170,7 +177,7 @@ begin
   PrackQueue.WillDeliver(Request.Identifier);
   Assert(Request.Status = rsIncoming);
 
-  PrackQueue.AttachResponse(Request.Identifier, 'Hello, World!');
+  PrackQueue.AttachResponse(Request.Identifier, EXAMPLE_RESPONSE);
   Assert(Request.Status = rsIncoming);
   AssertEquals('', Request.Response);
 end;

@@ -1,5 +1,6 @@
 /src/Prack
-/src/lib
-/src/backup
-/src/Prack.lps
-/src/Prack.dSYM
+/tests/PrackTests
+/**/lib
+/**/backup
+/**/*.lps
+/**/*.dSYM

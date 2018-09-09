@@ -22,24 +22,23 @@
       <FormatVersion Value="2"/>
       <Modes Count="0"/>
     </RunParams>
-    <RequiredPackages Count="1">
-      <Item1>
-        <PackageName Value="laz_synapse"/>
-      </Item1>
-    </RequiredPackages>
-    <Units Count="3">
+    <Units Count="4">
       <Unit0>
         <Filename Value="Prack.lpr"/>
         <IsPartOfProject Value="True"/>
       </Unit0>
       <Unit1>
-        <Filename Value="Requests.pas"/>
+        <Filename Value="Server.pas"/>
         <IsPartOfProject Value="True"/>
       </Unit1>
       <Unit2>
-        <Filename Value="Server.pas"/>
+        <Filename Value="GatewayServer.pas"/>
         <IsPartOfProject Value="True"/>
       </Unit2>
+      <Unit3>
+        <Filename Value="ApiServer.pas"/>
+        <IsPartOfProject Value="True"/>
+      </Unit3>
     </Units>
   </ProjectOptions>
   <CompilerOptions>
@@ -57,27 +56,12 @@
       </SyntaxOptions>
     </Parsing>
     <CodeGeneration>
-      <SmartLinkUnit Value="True"/>
-      <Checks>
-        <IOChecks Value="True"/>
-        <RangeChecks Value="True"/>
-        <OverflowChecks Value="True"/>
-        <StackChecks Value="True"/>
-      </Checks>
-      <VerifyObjMethodCallValidity Value="True"/>
       <TargetCPU Value="x86_64"/>
-      <TargetOS Value="darwin"/>
     </CodeGeneration>
-    <Linking>
-      <Debugging>
-        <UseHeaptrc Value="True"/>
-        <StripSymbols Value="True"/>
-        <UseExternalDbgSyms Value="True"/>
-      </Debugging>
-    </Linking>
     <Other>
       <Verbosity>
         <ShoLineNum Value="True"/>
+        <ShowAll Value="True"/>
       </Verbosity>
       <CustomOptions Value="-dUseCThreads"/>
     </Other>

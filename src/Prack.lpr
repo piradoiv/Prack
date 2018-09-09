@@ -2,45 +2,56 @@ program Prack;
 
 {$mode objfpc}{$H+}
 
-uses
-  {$IFDEF UNIX}
-  //Cthreads,
-  //Cmem,
-  {$ENDIF}
-  Classes, SysUtils, BaseUnix,
-  Server;
+uses {$ifdef unix}
+  Cthreads,
+  Cmem,
+  BaseUnix, {$endif}
+  Classes,
+  SysUtils,
+  Server,
+  ApiServer;
 
 var
-  App: TPrackServer;
-  Host: String;
-  GatewayPort, APIPort: Integer;
+  App: TPrack;
+  GatewayHost, ApiHost: string;
+  GatewayPort, ApiPort: integer;
 
-procedure SigKillHandler(Sig: Longint); cdecl;
+  procedure SigKillHandler(Sig: longint); cdecl;
+  begin
+    Write(#8#8, 'Shutting down the server...', CRLF, CRLF);
+    App.Active := False;
+  end;
+
 begin
-  Sig.ToString;
-  FreeAndNil(App);
-  Halt(0);
-end;
+  {$IFDEF UNIX}
+  FpSignal(SIGINT, @SigKillHandler);
+  {$ENDIF}
 
-begin
-  //FpSignal(SIGINT, @SigKillHandler);
+  if ParamStr(1) <> '' then
+    GatewayHost := ParamStr(1)
+  else
+    GatewayHost := Server.DEFAULT_GATEWAY_HOST;
 
-  if ParamStr(1) <> '' then Host := ParamStr(1) else Host := '127.0.0.1';
   try
     GatewayPort := StrToInt(ParamStr(2));
   except
-    GatewayPort := 8080;
+    GatewayPort := Server.DEFAULT_GATEWAY_PORT;
   end;
+
+  if ParamStr(3) <> '' then
+    ApiHost := ParamStr(3)
+  else
+    ApiHost := Server.DEFAULT_API_HOST;
 
   try
-    APIPort := StrToInt(ParamStr(3));
+    APIPort := StrToInt(ParamStr(4));
   except
-    APIPort := 4242;
+    APIPort := Server.DEFAULT_API_PORT;
   end;
 
-  Writeln('Starting public server on http://', Host, ':', IntToStr(GatewayPort),
-    '; API Server on http://', Host, ':', APIPort);
-  App := TPrackServer.Create(Host, GatewayPort, APIPort);
+  App := TPrack.Create(GatewayHost, GatewayPort, ApiHost, ApiPort);
   App.Start;
+
+  FreeAndNil(App);
 end.
 

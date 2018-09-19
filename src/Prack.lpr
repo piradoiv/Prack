@@ -4,12 +4,11 @@ program Prack;
 
 uses {$ifdef unix}
   Cthreads,
-  Cmem,
+  //Cmem,
   BaseUnix, {$endif}
   Classes,
   SysUtils,
-  Server,
-  ApiServer;
+  Server;
 
 var
   App: TPrack;
@@ -54,4 +53,5 @@ begin
 
   FreeAndNil(App);
 end.
+
 

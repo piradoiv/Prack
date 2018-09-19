@@ -1,4 +1,4 @@
-unit Theater;
+unit Theatre;
 
 {$mode objfpc}{$H+}
 

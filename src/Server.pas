@@ -6,7 +6,7 @@ interface
 
 uses
   Classes, SysUtils, DateUtils, fpJSON, jsonparser,
-  GatewayServer, ApiServer;
+  GatewayServer, ApiServer, Queue, Orchestra;
 
 const
   SOCKET_READ_TIMEOUT = 50;
@@ -27,12 +27,12 @@ type
     FApiHost: string;
     FGatewayPort: integer;
     FAPIPort: integer;
-    FGatewayServer: TServer;
+    FGatewayServer: TGatewayServer;
     FApiServer: TApiServer;
-
+    FQueue: TPrackQueue;
+    FOrchestra: TOrchestra;
   public
     Active: boolean;
-
     constructor Create(GatewayHost: string; GatewayPort: integer;
       ApiHost: string; ApiPort: integer);
     destructor Destroy; override;
@@ -45,12 +45,17 @@ constructor TPrack.Create(GatewayHost: string; GatewayPort: integer;
   ApiHost: string; ApiPort: integer);
 begin
   Active := False;
+  FQueue := TPrackQueue.Create;
+
+  FOrchestra := TOrchestra.Create(FQueue);
+
   FGatewayHost := GatewayHost;
   FGatewayPort := GatewayPort;
+  FGatewayServer := TGatewayServer.Create(FGatewayHost, FGatewayPort, FQueue);
+
   FApiHost := ApiHost;
   FApiPort := ApiPort;
-  FGatewayServer := TServer.Create(FGatewayHost, FGatewayPort);
-  FApiServer := TApiServer.Create(FApiHost, FApiPort);
+  FApiServer := TApiServer.Create(FApiHost, FApiPort, FQueue);
 end;
 
 procedure TPrack.Start;
@@ -70,7 +75,8 @@ begin
 
   while Active = True do
   begin
-    CheckSynchronize(1000);
+    Writeln(FQueue.Count, ' pending connections');
+    Sleep(1000);
   end;
 end;
 
@@ -78,6 +84,7 @@ destructor TPrack.Destroy;
 begin
   FreeAndNil(FGatewayServer);
   FreeAndNil(FApiServer);
+  FreeAndNil(FQueue);
   Writeln('(╯°□°）╯︵ ┻━┻', CRLF);
   inherited;
 end;

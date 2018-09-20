@@ -56,6 +56,10 @@ end;
 procedure TApiServer.RequestHandler(Sender: TObject;
   var ARequest: TFPHTTPConnectionRequest; var AResponse: TFPHTTPConnectionResponse);
 begin
+  AResponse.ContentType := 'application/json';
+  AResponse.Content := '{"error": "There are no requests pending"}';
+  AResponse.Code := 404;
+
   case ARequest.Method of
     'GET': Get(ARequest, AResponse);
     'POST': Post(ARequest, AResponse);
@@ -69,10 +73,6 @@ var
   I: integer;
   Connection: TPrackConnection;
 begin
-  AResponse.ContentType := 'application/json';
-  AResponse.Content := '{"error": "There are no requests pending"}';
-  AResponse.Code := 404;
-
   List := FQueue.LockList;
   try
     for I := 0 to List.Count - 1 do
@@ -81,6 +81,7 @@ begin
       if Connection.Status <> pcsIncoming then
         Continue;
 
+      Connection.Setup;
       ProcessGet(Connection, AResponse);
       Exit;
     end;
@@ -137,12 +138,9 @@ begin
   // TODO: FieldCount, FieldNames and FieldValues has been deprecated
   for I := 0 to RequestHeaders.FieldCount - 1 do
   begin
-    with RequestHeaders do
-    begin
-      FieldName := StringReplace(FieldNames[I], '-', '_', [rfReplaceAll]);
-      FieldValue := Trim(FieldValues[I]);
-    end;
-
+    FieldName := RequestHeaders.FieldNames[I];
+    FieldName := StringReplace(FieldName, '-', '_', [rfReplaceAll]);
+    FieldValue := Trim(RequestHeaders.FieldValues[I]);
     Headers.Add(Concat('HTTP_', UpperCase(FieldName)), FieldValue);
   end;
 end;
@@ -150,12 +148,9 @@ end;
 procedure TApiServer.ProcessGet(Connection: TPrackConnection;
   var AResponse: TFPHTTPConnectionResponse);
 begin
-  Connection.Setup;
-
   AResponse.Code := 200;
-  AResponse.Content := '{"identifier": "' + Connection.Identifier +
-    '", "environment": ' + BuildHeaders(Connection) + '}';
-
+  AResponse.Content := Format('{"identifier": "%s", "environment": %s}',
+    [Connection.Identifier, BuildHeaders(Connection)]);
   Connection.Status := pcsProcessing;
 end;
 
@@ -172,10 +167,6 @@ var
   Header: TJSONObject;
   JsonRequest: TJSONData;
 begin
-  AResponse.ContentType := 'application/json';
-  AResponse.Content := '{"error": "There are no requests pending"}';
-  AResponse.Code := 404;
-
   try
     JsonRequest := GetJSON(ARequest.Content);
     Identifier := JsonRequest.FindPath('identifier').AsString;

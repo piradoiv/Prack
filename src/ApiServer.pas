@@ -6,7 +6,7 @@ interface
 
 uses
   Classes, SysUtils, FpHTTPServer, DateUtils,
-  FpJson, JsonParser, HttpDefs, Queue;
+  FpJson, JsonParser, HttpDefs, Queue, StrUtils;
 
 const
   CRLF = #13#10;
@@ -45,8 +45,11 @@ procedure TApiServer.Get(var ARequest: TFPHTTPConnectionRequest;
   var AResponse: TFPHTTPConnectionResponse);
 var
   List: TList;
-  I: Integer;
+  I, J: Integer;
   Connection: TPrackConnection;
+  Headers: TJSONArray;
+  HeadersStr: String;
+  FieldName, FieldValue: String;
 begin
   AResponse.ContentType := 'application/json';
   AResponse.Content := '{"error": "There are no requests pending"}';
@@ -59,8 +62,35 @@ begin
       Connection := TPrackConnection(List.Items[I]);
       if Connection.Status <> pcsIncoming then Continue;
 
+      try
+        Headers := TJSONArray.Create;
+        Headers.Add(TJSONObject.Create(['REQUEST_METHOD', Trim(Connection.RequestHeaders.Command)]));
+        Headers.Add(TJSONObject.Create(['SCRIPT_NAME', Trim(Connection.RequestHeaders.ScriptName)]));
+        Headers.Add(TJSONObject.Create(['PATH_INFO', Trim(Connection.RequestHeaders.Uri)]));
+        Headers.Add(TJSONObject.Create(['QUERY_STRING', Trim(Connection.RequestHeaders.QueryString)]));
+        Headers.Add(TJSONObject.Create(['SERVER_NAME', Trim(ExtractDelimited(1, Connection.RequestHeaders.Host, [':']))]));
+        Headers.Add(TJSONObject.Create(['SERVER_PORT', Trim(ExtractDelimited(2, Connection.RequestHeaders.Host, [':']))]));
+        for J := 0 to Connection.RequestHeaders.FieldCount - 1 do
+        begin
+          with Connection.RequestHeaders do
+          begin
+            FieldName := Concat('HTTP_', UpperCase(StringReplace(FieldNames[J], '-', '_', [rfReplaceAll])));
+            FieldValue := Trim(FieldValues[J]);
+            Headers.Add(TJSONObject.Create([FieldName, FieldValue]));
+          end;
+        end;
+
+        HeadersStr := Headers.FormatJSON;
+
+      except
+        on E: Exception do Writeln(E.Message);
+      end;
+
       AResponse.Code := 200;
-      AResponse.Content := '{"identifier": "' + Connection.Identifier + '"}';
+      AResponse.Content := '{"identifier": "' + Connection.Identifier + '", "environment": ' + HeadersStr + '}';
+
+      FreeAndNil(Headers);
+
       Connection.Status := pcsProcessing;
       Exit;
     end;

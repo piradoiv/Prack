@@ -37,6 +37,7 @@ begin
   try
     Connection := TPrackConnection.Create;
     Connection.Socket := Data;
+    Connection.RequestHeaders.LoadFromStream(Data, True);
     FQueue.Add(Connection);
   except
     on E: Exception do Writeln('TGatewayServer.OnConnectHandler: ', E.Message);
@@ -51,7 +52,6 @@ end;
 
 procedure TGatewayServer.Start;
 begin
-  Writeln('TGatewayServer.Start');
   OnConnect := @OnConnectHandler;
   StartAccepting;
 end;

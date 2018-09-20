@@ -35,6 +35,7 @@ type
     Status: TPrackConnectionStatus;
     Sender: TObject;
     Socket: TSocketStream;
+    RequestHeaders: TRequest;
     Response: TPrackResponse;
     constructor Create;
     destructor Destroy; override;
@@ -108,12 +109,14 @@ begin
   Identifier := GuidToString(GUID);
   Status := pcsIncoming;
   Response := TPrackResponse.Create;
+  RequestHeaders := TRequest.Create;
 end;
 
 destructor TPrackConnection.Destroy;
 begin
   FreeAndNil(Socket);
   FreeAndNil(Response);
+  FreeAndNil(RequestHeaders);
   inherited Destroy;
 end;
 

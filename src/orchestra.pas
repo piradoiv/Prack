@@ -5,10 +5,10 @@ unit Orchestra;
 interface
 
 uses
-  Classes, SysUtils, Queue, DateUtils;
+  Classes, SysUtils, Queue, DateUtils, Connections;
 
 const
-  TIMEOUT_LIMIT = 15;
+  TIMEOUT_LIMIT = 3;
 
 type
 

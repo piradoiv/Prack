@@ -77,12 +77,13 @@ begin
   while Active = True do
   begin
     Counter := FQueue.Count;
-    Face := '😀';
-    if Counter = 0 then Face := '🎉';
-    if Counter >= 5 then Face := '😟';
-    if Counter >= 50 then Face := '😰';
-    Write(#13, '                                             ', #13,
-      '    ', Face, ' ', Counter, ' pending connections');
+    //Face := '😀';
+    //if Counter = 0 then Face := '🎉';
+    //if Counter >= 5 then Face := '😟';
+    //if Counter >= 50 then Face := '😰';
+    //Write(#13, '                                             ', #13,
+    //  '    ', Face, ' ', Counter, ' pending connections');
+    Writeln(Format('%d pending connections', [Counter]));
     Sleep(1000);
   end;
 end;

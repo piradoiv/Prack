@@ -55,7 +55,7 @@
       <FormatVersion Value="2"/>
       <Modes Count="0"/>
     </RunParams>
-    <Units Count="8">
+    <Units Count="9">
       <Unit0>
         <Filename Value="Prack.lpr"/>
         <IsPartOfProject Value="True"/>
@@ -91,6 +91,11 @@
         <IsPartOfProject Value="True"/>
         <UnitName Value="Orchestra"/>
       </Unit7>
+      <Unit8>
+        <Filename Value="connections.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="Connections"/>
+      </Unit8>
     </Units>
   </ProjectOptions>
   <CompilerOptions>

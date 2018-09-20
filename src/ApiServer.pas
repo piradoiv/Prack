@@ -6,10 +6,7 @@ interface
 
 uses
   Classes, SysUtils, FpHTTPServer, DateUtils,
-  FpJson, JsonParser, HttpDefs, Queue, StrUtils;
-
-const
-  CRLF = #13#10;
+  FpJson, JsonParser, HttpDefs, Queue, StrUtils, Connections;
 
 type
 
@@ -47,7 +44,7 @@ var
   List: TList;
   I, J: Integer;
   Connection: TPrackConnection;
-  Headers: TJSONArray;
+  Headers: TJSONObject;
   HeadersStr: String;
   FieldName, FieldValue: String;
 begin
@@ -63,20 +60,20 @@ begin
       if Connection.Status <> pcsIncoming then Continue;
 
       try
-        Headers := TJSONArray.Create;
-        Headers.Add(TJSONObject.Create(['REQUEST_METHOD', Trim(Connection.RequestHeaders.Command)]));
-        Headers.Add(TJSONObject.Create(['SCRIPT_NAME', Trim(Connection.RequestHeaders.ScriptName)]));
-        Headers.Add(TJSONObject.Create(['PATH_INFO', Trim(Connection.RequestHeaders.Uri)]));
-        Headers.Add(TJSONObject.Create(['QUERY_STRING', Trim(Connection.RequestHeaders.QueryString)]));
-        Headers.Add(TJSONObject.Create(['SERVER_NAME', Trim(ExtractDelimited(1, Connection.RequestHeaders.Host, [':']))]));
-        Headers.Add(TJSONObject.Create(['SERVER_PORT', Trim(ExtractDelimited(2, Connection.RequestHeaders.Host, [':']))]));
+        Headers := TJSONObject.Create;
+        Headers.Add('REQUEST_METHOD', Trim(Connection.RequestHeaders.Command));
+        Headers.Add('SCRIPT_NAME', Trim(Connection.RequestHeaders.ScriptName));
+        Headers.Add('PATH_INFO', Trim(Connection.RequestHeaders.Uri));
+        Headers.Add('QUERY_STRING', Trim(Connection.RequestHeaders.QueryString));
+        Headers.Add('SERVER_NAME', Trim(ExtractDelimited(1, Connection.RequestHeaders.Host, [':'])));
+        Headers.Add('SERVER_PORT', Trim(ExtractDelimited(2, Connection.RequestHeaders.Host, [':'])));
         for J := 0 to Connection.RequestHeaders.FieldCount - 1 do
         begin
           with Connection.RequestHeaders do
           begin
             FieldName := Concat('HTTP_', UpperCase(StringReplace(FieldNames[J], '-', '_', [rfReplaceAll])));
             FieldValue := Trim(FieldValues[J]);
-            Headers.Add(TJSONObject.Create([FieldName, FieldValue]));
+            Headers.Add(FieldName, FieldValue);
           end;
         end;
 

@@ -8,7 +8,7 @@ uses
   Classes, SysUtils, Queue, DateUtils, Connections;
 
 const
-  TIMEOUT_LIMIT = 3;
+  TIMEOUT_LIMIT = 60;
 
 type
 

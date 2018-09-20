@@ -59,6 +59,7 @@ begin
       Connection := TPrackConnection(List.Items[I]);
       if Connection.Status <> pcsIncoming then Continue;
 
+      Connection.Setup;
       try
         Headers := TJSONObject.Create;
         Headers.Add('REQUEST_METHOD', Trim(Connection.RequestHeaders.Command));

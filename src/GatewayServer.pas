@@ -31,7 +31,6 @@ var
 begin
   Connection := TPrackConnection.Create;
   Connection.Socket := Data;
-  Connection.RequestHeaders.LoadFromStream(Data, True);
   FQueue.Add(Connection);
 end;
 

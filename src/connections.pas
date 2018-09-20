@@ -37,6 +37,7 @@ type
     constructor Create;
     destructor Destroy; override;
     procedure SendResponse;
+    procedure Setup;
   end;
 
 implementation
@@ -51,8 +52,6 @@ begin
   CreateGuid(GUID);
   Identifier := GuidToString(GUID);
   Status := pcsIncoming;
-  Response := TPrackResponse.Create;
-  RequestHeaders := TRequest.Create;
 end;
 
 destructor TPrackConnection.Destroy;
@@ -69,17 +68,23 @@ var
   StringStream: TStringStream;
 begin
   Assert(Response.Code >= 100);
-  //Assert(Response.Headers <> '');
-  Assert(Response.Body <> '');
-
   Http := Concat('HTTP/1.1 ', IntToStr(Response.Code), ' ',
     GetStatusCode(Response.Code), CRLF);
   StringStream := TStringStream.Create(Concat(Http, Response.Headers,
     CRLF, Response.Body));
   Socket.CopyFrom(StringStream, StringStream.Size);
   FreeAndNil(StringStream);
-
   Assert(not Assigned(StringStream));
+end;
+
+procedure TPrackConnection.Setup;
+begin
+  if not Assigned(Response) then Response := TPrackResponse.Create;
+  if not Assigned(RequestHeaders) then
+  begin
+    RequestHeaders := TRequest.Create;
+    RequestHeaders.LoadFromStream(Socket, True);
+  end;
 end;
 
 end.

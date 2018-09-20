@@ -9,8 +9,6 @@ uses
   GatewayServer, ApiServer, Queue, Orchestra;
 
 const
-  SOCKET_READ_TIMEOUT = 50;
-  REQUEST_TIMEOUT_SECS = 30;
   DEFAULT_GATEWAY_HOST = '0.0.0.0';
   DEFAULT_GATEWAY_PORT = 8080;
   DEFAULT_API_HOST = '0.0.0.0';
@@ -59,6 +57,9 @@ begin
 end;
 
 procedure TPrack.Start;
+var
+  Counter: Integer;
+  Face: String;
 begin
   Active := True;
   Writeln(CRLF,
@@ -75,7 +76,13 @@ begin
 
   while Active = True do
   begin
-    Writeln(FQueue.Count, ' pending connections');
+    Counter := FQueue.Count;
+    Face := '😀';
+    if Counter = 0 then Face := '🎉';
+    if Counter >= 5 then Face := '😟';
+    if Counter >= 50 then Face := '😰';
+    Write(#13, '                                             ', #13,
+      '    ', Face, ' ', Counter, ' pending connections');
     Sleep(1000);
   end;
 end;
@@ -90,4 +97,3 @@ begin
 end;
 
 end.
-

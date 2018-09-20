@@ -33,6 +33,11 @@
             <TargetCPU Value="x86_64"/>
             <TargetOS Value="linux"/>
           </CodeGeneration>
+          <Linking>
+            <Debugging>
+              <UseHeaptrc Value="True"/>
+            </Debugging>
+          </Linking>
           <Other>
             <Verbosity>
               <ShoLineNum Value="True"/>

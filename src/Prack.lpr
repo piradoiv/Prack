@@ -17,7 +17,7 @@ var
 
   procedure SigKillHandler(Sig: longint); cdecl;
   begin
-    Write(#8#8, 'Shutting down the server...', CRLF, CRLF);
+    Write(#8#8, '  ', CRLF, 'Shutting down the server...', CRLF, CRLF);
     App.Active := False;
   end;
 

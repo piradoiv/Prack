@@ -18,6 +18,7 @@ type
     destructor Destroy; override;
     function Count: integer;
     function Pop(Status: TPrackConnectionStatus): TPrackConnection;
+    function Pop(Status: TPrackConnectionStatus; Identifier: string): TPrackConnection;
   end;
 
 implementation
@@ -58,16 +59,43 @@ function TPrackQueue.Pop(Status: TPrackConnectionStatus): TPrackConnection;
 var
   I: integer;
   List: TList;
+  Connection: TPrackConnection;
 begin
   Result := nil;
   List := LockList;
   try
     for I := 0 to List.Count - 1 do
     begin
-      if TPrackConnection(List.Items[I]).Status <> pcsIncoming then
+      Connection := TPrackConnection(List.Items[I]);
+      if Connection.Status <> pcsIncoming then
         Continue;
 
       Result := TPrackConnection(List.Items[I]);
+      Remove(Result);
+      Exit;
+    end;
+  finally
+    UnlockList;
+  end;
+end;
+
+function TPrackQueue.Pop(Status: TPrackConnectionStatus;
+  Identifier: string): TPrackConnection;
+var
+  I: integer;
+  List: TList;
+  Connection: TPrackConnection;
+begin
+  Result := nil;
+  List := LockList;
+  try
+    for I := 0 to List.Count - 1 do
+    begin
+      Connection := TPrackConnection(List.Items[I]);
+      if (Connection.Status <> Status) or (Connection.Identifier <> Identifier) then
+        Continue;
+
+      Result := Connection;
       Remove(Result);
       Exit;
     end;

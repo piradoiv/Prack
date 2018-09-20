@@ -9,7 +9,19 @@ uses
   FpJson, JsonParser, HttpDefs, Queue, StrUtils, Connections;
 
 const
+  API_CONTENT_TYPE = 'application/json';
+  API_DEFAULT_ERROR = '{"error": "There are no requests pending"}';
+  API_THANK_YOU = '{"message": "thank you"}';
   API_GET_JSON = '{"identifier": "%s", "environment": %s}';
+  CODE_NOT_FOUND = 404;
+  METHOD_GET = 'GET';
+  METHOD_POST = 'POST';
+  HTTP_HEADER_PREFIX = 'HTTP_';
+  PATH_IDENTIFIER = 'identifier';
+  PATH_CODE = 'code';
+  PATH_HEADERS = 'headers';
+  PATH_BODY = 'body';
+  FORMAT_HEADER = '%s: %s';
 
 type
 
@@ -58,13 +70,13 @@ end;
 procedure TApiServer.RequestHandler(Sender: TObject;
   var ARequest: TFPHTTPConnectionRequest; var AResponse: TFPHTTPConnectionResponse);
 begin
-  AResponse.ContentType := 'application/json';
-  AResponse.Content := '{"error": "There are no requests pending"}';
-  AResponse.Code := 404;
+  AResponse.ContentType := API_CONTENT_TYPE;
+  AResponse.Content := API_DEFAULT_ERROR;
+  AResponse.Code := CODE_NOT_FOUND;
 
   case ARequest.Method of
-    'GET': Get(ARequest, AResponse);
-    'POST': Post(ARequest, AResponse);
+    METHOD_GET: Get(ARequest, AResponse);
+    METHOD_POST: Post(ARequest, AResponse);
   end;
 end;
 
@@ -136,7 +148,7 @@ begin
     FieldName := RequestHeaders.FieldNames[I];
     FieldName := StringReplace(FieldName, '-', '_', [rfReplaceAll]);
     FieldValue := Trim(RequestHeaders.FieldValues[I]);
-    Headers.Add(Concat('HTTP_', UpperCase(FieldName)), FieldValue);
+    Headers.Add(Concat(HTTP_HEADER_PREFIX, UpperCase(FieldName)), FieldValue);
   end;
 end;
 
@@ -149,13 +161,14 @@ var
   Identifier: string;
   Code: integer;
   Headers: string;
+  Header: string;
   Body: string;
-  Header: TJSONObject;
+  JsonHeader: TJSONObject;
   JsonRequest: TJSONData;
 begin
   try
     JsonRequest := GetJSON(ARequest.Content);
-    Identifier := JsonRequest.FindPath('identifier').AsString;
+    Identifier := JsonRequest.FindPath(PATH_IDENTIFIER).AsString;
   except
     Exit;
   end;
@@ -170,15 +183,16 @@ begin
         Continue;
 
       try
-        Code := JsonRequest.FindPath('code').AsInteger;
+        Code := JsonRequest.FindPath(PATH_CODE).AsInteger;
         Headers := '';
-        for J := 0 to JsonRequest.FindPath('headers').Count - 1 do
+        for J := 0 to JsonRequest.FindPath(PATH_HEADERS).Count - 1 do
         begin
-          Header := TJSONObject(JsonRequest.FindPath('headers').Items[J]);
-          Headers := Concat(Headers, Header.Names[0], ': ',
-            Header.Items[0].AsString, CRLF);
+          JsonHeader := TJSONObject(JsonRequest.FindPath(PATH_HEADERS).Items[J]);
+          Header := Format(FORMAT_HEADER, [JsonHeader.Names[0],
+            JsonHeader.Items[0].AsString]);
+          Headers := Concat(Headers, Header, CRLF);
         end;
-        Body := JsonRequest.FindPath('body').AsString;
+        Body := JsonRequest.FindPath(PATH_BODY).AsString;
       except
         Writeln('TApiServer.Post: Error parsing the JSON');
         Connection.Status := pcsError;
@@ -194,13 +208,13 @@ begin
       end;
 
       AResponse.Code := 200;
-      AResponse.Content := '{"message": "thank you"}';
+      AResponse.Content := API_THANK_YOU;
       Exit;
     end;
   finally
     FQueue.UnlockList;
     FQueue.Event.SetEvent;
-    FreeAndNil(Header);
+    FreeAndNil(JsonHeader);
     FreeAndNil(JsonRequest);
   end;
 end;

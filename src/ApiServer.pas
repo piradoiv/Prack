@@ -22,6 +22,11 @@ type
       var AResponse: TFPHTTPConnectionResponse);
     procedure Post(var ARequest: TFPHTTPConnectionRequest;
       var AResponse: TFPHTTPConnectionResponse);
+    procedure BuildRackHeaders(RequestHeaders: TRequest; var Headers: TJSONObject);
+    procedure BuildHTTPHeaders(RequestHeaders: TRequest; var Headers: TJSONObject);
+    procedure ProcessGet(Connection: TPrackConnection;
+      var AResponse: TFPHTTPConnectionResponse);
+    function BuildHeaders(Connection: TPrackConnection): string;
   public
     constructor Create(ServerAddress: string; ServerPort: word; AQueue: TPrackQueue);
       reintroduce;
@@ -31,6 +36,22 @@ type
 implementation
 
 { TApiServer }
+
+constructor TApiServer.Create(ServerAddress: string; ServerPort: word;
+  AQueue: TPrackQueue);
+begin
+  inherited Create(nil);
+  FQueue := AQueue;
+  Address := ServerAddress;
+  Port := ServerPort;
+  Threaded := False;
+  OnRequest := @RequestHandler;
+end;
+
+procedure TApiServer.Start;
+begin
+  Active := True;
+end;
 
 procedure TApiServer.RequestHandler(Sender: TObject;
   var ARequest: TFPHTTPConnectionRequest; var AResponse: TFPHTTPConnectionResponse);
@@ -45,11 +66,8 @@ procedure TApiServer.Get(var ARequest: TFPHTTPConnectionRequest;
   var AResponse: TFPHTTPConnectionResponse);
 var
   List: TList;
-  I, J: integer;
+  I: integer;
   Connection: TPrackConnection;
-  Headers: TJSONObject;
-  HeadersStr: string;
-  FieldName, FieldValue: string;
 begin
   AResponse.ContentType := 'application/json';
   AResponse.Content := '{"error": "There are no requests pending"}';
@@ -63,49 +81,82 @@ begin
       if Connection.Status <> pcsIncoming then
         Continue;
 
-      Connection.Setup;
-      try
-        Headers := TJSONObject.Create;
-        Headers.Add('REQUEST_METHOD', Trim(Connection.RequestHeaders.Command));
-        Headers.Add('SCRIPT_NAME', Trim(Connection.RequestHeaders.ScriptName));
-        Headers.Add('PATH_INFO', Trim(Connection.RequestHeaders.Uri));
-        Headers.Add('QUERY_STRING', Trim(Connection.RequestHeaders.QueryString));
-        Headers.Add('SERVER_NAME',
-          Trim(ExtractDelimited(1, Connection.RequestHeaders.Host, [':'])));
-        Headers.Add('SERVER_PORT',
-          Trim(ExtractDelimited(2, Connection.RequestHeaders.Host, [':'])));
-        for J := 0 to Connection.RequestHeaders.FieldCount - 1 do
-        begin
-          with Connection.RequestHeaders do
-          begin
-            FieldName := Concat('HTTP_',
-              UpperCase(StringReplace(FieldNames[J], '-', '_', [rfReplaceAll])));
-            FieldValue := Trim(FieldValues[J]);
-            Headers.Add(FieldName, FieldValue);
-          end;
-        end;
-
-        HeadersStr := Headers.FormatJSON;
-
-      except
-        on E: Exception do
-          Writeln(E.Message);
-      end;
-
-      AResponse.Code := 200;
-      AResponse.Content := '{"identifier": "' + Connection.Identifier +
-        '", "environment": ' + HeadersStr + '}';
-
-      FreeAndNil(Headers);
-
-      Connection.Status := pcsProcessing;
+      ProcessGet(Connection, AResponse);
       Exit;
     end;
   finally
     FQueue.UnlockList;
-    List := nil;
-    Connection := nil;
   end;
+end;
+
+function TApiServer.BuildHeaders(Connection: TPrackConnection): string;
+var
+  Headers: TJSONObject;
+begin
+  Headers := TJSONObject.Create;
+  try
+    BuildRackHeaders(Connection.RequestHeaders, Headers);
+    BuildHTTPHeaders(Connection.RequestHeaders, Headers);
+    Result := Headers.FormatJSON;
+    Assert(Result <> '');
+  except
+    on E: Exception do
+      Writeln('TApiServer.BuildHeaders: ', E.Message);
+  end;
+  FreeAndNil(Headers);
+end;
+
+procedure TApiServer.BuildRackHeaders(RequestHeaders: TRequest;
+  var Headers: TJSONObject);
+var
+  ServerName, ServerPort: string;
+begin
+  ServerName := ExtractDelimited(1, RequestHeaders.Host, [':']);
+  ServerPort := ExtractDelimited(2, RequestHeaders.Host, [':']);
+  Assert(ServerName <> '');
+  Assert(ServerPort <> '');
+  Assert(RequestHeaders.Command <> '');
+
+  with Headers do
+  begin
+    Add('REQUEST_METHOD', Trim(RequestHeaders.Command));
+    Add('SCRIPT_NAME', Trim(RequestHeaders.ScriptName));
+    Add('PATH_INFO', Trim(RequestHeaders.Uri));
+    Add('QUERY_STRING', Trim(RequestHeaders.QueryString));
+    Add('SERVER_NAME', Trim(ServerName));
+    Add('SERVER_PORT', Trim(ServerPort));
+  end;
+end;
+
+procedure TApiServer.BuildHTTPHeaders(RequestHeaders: TRequest;
+  var Headers: TJSONObject);
+var
+  I: integer;
+  FieldName, FieldValue: string;
+begin
+  // TODO: FieldCount, FieldNames and FieldValues has been deprecated
+  for I := 0 to RequestHeaders.FieldCount - 1 do
+  begin
+    with RequestHeaders do
+    begin
+      FieldName := StringReplace(FieldNames[I], '-', '_', [rfReplaceAll]);
+      FieldValue := Trim(FieldValues[I]);
+    end;
+
+    Headers.Add(Concat('HTTP_', UpperCase(FieldName)), FieldValue);
+  end;
+end;
+
+procedure TApiServer.ProcessGet(Connection: TPrackConnection;
+  var AResponse: TFPHTTPConnectionResponse);
+begin
+  Connection.Setup;
+
+  AResponse.Code := 200;
+  AResponse.Content := '{"identifier": "' + Connection.Identifier +
+    '", "environment": ' + BuildHeaders(Connection) + '}';
+
+  Connection.Status := pcsProcessing;
 end;
 
 procedure TApiServer.Post(var ARequest: TFPHTTPConnectionRequest;
@@ -147,8 +198,8 @@ begin
         for J := 0 to JsonRequest.FindPath('headers').Count - 1 do
         begin
           Header := TJSONObject(JsonRequest.FindPath('headers').Items[J]);
-          Headers := Concat(Headers, Header.Names[0],
-            ': ', Header.Items[0].AsString, CRLF);
+          Headers := Concat(Headers, Header.Names[0], ': ',
+            Header.Items[0].AsString, CRLF);
         end;
         Body := JsonRequest.FindPath('body').AsString;
       except
@@ -157,10 +208,13 @@ begin
         Exit;
       end;
 
-      Connection.Status := pcsReady;
-      Connection.Response.Code := Code;
-      Connection.Response.Headers := Headers;
-      Connection.Response.Body := Body;
+      with Connection do
+      begin
+        Status := pcsReady;
+        Response.Code := Code;
+        Response.Headers := Headers;
+        Response.Body := Body;
+      end;
 
       AResponse.Code := 200;
       AResponse.Content := '{"message": "thank you"}';
@@ -172,22 +226,6 @@ begin
     FreeAndNil(Header);
     FreeAndNil(JsonRequest);
   end;
-end;
-
-constructor TApiServer.Create(ServerAddress: string; ServerPort: word;
-  AQueue: TPrackQueue);
-begin
-  inherited Create(nil);
-  FQueue := AQueue;
-  Address := ServerAddress;
-  Port := ServerPort;
-  Threaded := False;
-  OnRequest := @RequestHandler;
-end;
-
-procedure TApiServer.Start;
-begin
-  Active := True;
 end;
 
 end.

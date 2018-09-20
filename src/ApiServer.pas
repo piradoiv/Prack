@@ -8,25 +8,27 @@ uses
   Classes, SysUtils, FpHTTPServer, DateUtils,
   FpJson, JsonParser, HttpDefs, Queue, StrUtils, Connections;
 
+const
+  API_GET_JSON = '{"identifier": "%s", "environment": %s}';
+
 type
 
   { TApiServer }
 
   TApiServer = class(TFPCustomHttpServer)
   private
-    FQueue: TPrackQueue;
-    procedure RequestHandler(Sender: TObject;
-      var ARequest: TFPHTTPConnectionRequest;
-      var AResponse: TFPHTTPConnectionResponse);
     procedure Get(var ARequest: TFPHTTPConnectionRequest;
       var AResponse: TFPHTTPConnectionResponse);
     procedure Post(var ARequest: TFPHTTPConnectionRequest;
       var AResponse: TFPHTTPConnectionResponse);
     procedure BuildRackHeaders(RequestHeaders: TRequest; var Headers: TJSONObject);
     procedure BuildHTTPHeaders(RequestHeaders: TRequest; var Headers: TJSONObject);
-    procedure ProcessGet(Connection: TPrackConnection;
-      var AResponse: TFPHTTPConnectionResponse);
     function BuildHeaders(Connection: TPrackConnection): string;
+  protected
+    FQueue: TPrackQueue;
+    procedure RequestHandler(Sender: TObject;
+      var ARequest: TFPHTTPConnectionRequest;
+      var AResponse: TFPHTTPConnectionResponse);
   public
     constructor Create(ServerAddress: string; ServerPort: word; AQueue: TPrackQueue);
       reintroduce;
@@ -69,25 +71,18 @@ end;
 procedure TApiServer.Get(var ARequest: TFPHTTPConnectionRequest;
   var AResponse: TFPHTTPConnectionResponse);
 var
-  List: TList;
-  I: integer;
   Connection: TPrackConnection;
 begin
-  List := FQueue.LockList;
-  try
-    for I := 0 to List.Count - 1 do
-    begin
-      Connection := TPrackConnection(List.Items[I]);
-      if Connection.Status <> pcsIncoming then
-        Continue;
+  Connection := FQueue.Pop(pcsIncoming);
+  if not Assigned(Connection) then
+    Exit;
 
-      Connection.Setup;
-      ProcessGet(Connection, AResponse);
-      Exit;
-    end;
-  finally
-    FQueue.UnlockList;
-  end;
+  Connection.Status := pcsProcessing;
+  Connection.Setup;
+  AResponse.Code := 200;
+  AResponse.Content := Format(API_GET_JSON, [Connection.Identifier,
+    BuildHeaders(Connection)]);
+  FQueue.Add(Connection);
 end;
 
 function TApiServer.BuildHeaders(Connection: TPrackConnection): string;
@@ -143,15 +138,6 @@ begin
     FieldValue := Trim(RequestHeaders.FieldValues[I]);
     Headers.Add(Concat('HTTP_', UpperCase(FieldName)), FieldValue);
   end;
-end;
-
-procedure TApiServer.ProcessGet(Connection: TPrackConnection;
-  var AResponse: TFPHTTPConnectionResponse);
-begin
-  AResponse.Code := 200;
-  AResponse.Content := Format('{"identifier": "%s", "environment": %s}',
-    [Connection.Identifier, BuildHeaders(Connection)]);
-  Connection.Status := pcsProcessing;
 end;
 
 procedure TApiServer.Post(var ARequest: TFPHTTPConnectionRequest;

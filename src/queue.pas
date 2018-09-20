@@ -17,6 +17,7 @@ type
     constructor Create;
     destructor Destroy; override;
     function Count: integer;
+    function Pop(Status: TPrackConnectionStatus): TPrackConnection;
   end;
 
 implementation
@@ -51,6 +52,28 @@ begin
   List := LockList;
   Result := List.Count;
   UnlockList;
+end;
+
+function TPrackQueue.Pop(Status: TPrackConnectionStatus): TPrackConnection;
+var
+  I: integer;
+  List: TList;
+begin
+  Result := nil;
+  List := LockList;
+  try
+    for I := 0 to List.Count - 1 do
+    begin
+      if TPrackConnection(List.Items[I]).Status <> pcsIncoming then
+        Continue;
+
+      Result := TPrackConnection(List.Items[I]);
+      Remove(Result);
+      Exit;
+    end;
+  finally
+    UnlockList;
+  end;
 end;
 
 end.

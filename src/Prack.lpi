@@ -55,7 +55,7 @@
       <FormatVersion Value="2"/>
       <Modes Count="0"/>
     </RunParams>
-    <Units Count="9">
+    <Units Count="7">
       <Unit0>
         <Filename Value="Prack.lpr"/>
         <IsPartOfProject Value="True"/>
@@ -73,29 +73,20 @@
         <IsPartOfProject Value="True"/>
       </Unit3>
       <Unit4>
-        <Filename Value="prackactors.pas"/>
-        <IsPartOfProject Value="True"/>
-        <UnitName Value="PrackActors"/>
-      </Unit4>
-      <Unit5>
-        <Filename Value="Theatre.pas"/>
-        <IsPartOfProject Value="True"/>
-      </Unit5>
-      <Unit6>
         <Filename Value="queue.pas"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="Queue"/>
-      </Unit6>
-      <Unit7>
+      </Unit4>
+      <Unit5>
         <Filename Value="orchestra.pas"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="Orchestra"/>
-      </Unit7>
-      <Unit8>
+      </Unit5>
+      <Unit6>
         <Filename Value="connections.pas"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="Connections"/>
-      </Unit8>
+      </Unit6>
     </Units>
   </ProjectOptions>
   <CompilerOptions>

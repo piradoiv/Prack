@@ -79,7 +79,8 @@ end;
 
 procedure TPrackConnection.Setup;
 begin
-  if not Assigned(Response) then Response := TPrackResponse.Create;
+  if not Assigned(Response) then
+    Response := TPrackResponse.Create;
   if not Assigned(RequestHeaders) then
   begin
     RequestHeaders := TRequest.Create;
@@ -88,4 +89,3 @@ begin
 end;
 
 end.
-

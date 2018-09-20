@@ -78,7 +78,8 @@ begin
           on E: Exception do
           begin
             Writeln('TOrchestra.Execute: ', E.Message);
-            if Assigned(Connection) then FreeAndNil(Connection);
+            if Assigned(Connection) then
+              FreeAndNil(Connection);
           end;
         end;
       end;

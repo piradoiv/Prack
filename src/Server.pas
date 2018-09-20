@@ -58,8 +58,8 @@ end;
 
 procedure TPrack.Start;
 var
-  Counter: Integer;
-  Face: String;
+  Counter: integer;
+  //Face: string;
 begin
   Active := True;
   Writeln(CRLF,

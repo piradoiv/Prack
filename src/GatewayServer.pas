@@ -5,8 +5,7 @@ unit GatewayServer;
 interface
 
 uses
-  Classes, SysUtils, DateUtils, HttpDefs,
-  ssockets, Queue, Connections;
+  Classes, SysUtils, DateUtils, HttpDefs, ssockets, Queue, Connections;
 
 type
 
@@ -17,7 +16,7 @@ type
     FQueue: TPrackQueue;
     procedure OnConnectHandler(Sender: TObject; Data: TSocketStream);
   public
-    constructor Create(aHost: String; aPort: Word; aQueue: TPrackQueue);
+    constructor Create(aHost: string; aPort: word; aQueue: TPrackQueue);
     procedure Start;
   end;
 
@@ -34,7 +33,7 @@ begin
   FQueue.Add(Connection);
 end;
 
-constructor TGatewayServer.Create(aHost: String; aPort: Word; aQueue: TPrackQueue);
+constructor TGatewayServer.Create(aHost: string; aPort: word; aQueue: TPrackQueue);
 begin
   FQueue := AQueue;
   OnConnect := @OnConnectHandler;

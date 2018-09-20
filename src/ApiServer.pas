@@ -18,10 +18,13 @@ type
     procedure RequestHandler(Sender: TObject;
       var ARequest: TFPHTTPConnectionRequest;
       var AResponse: TFPHTTPConnectionResponse);
-    procedure Get(var ARequest: TFPHTTPConnectionRequest; var AResponse: TFPHTTPConnectionResponse);
-    procedure Post(var ARequest: TFPHTTPConnectionRequest; var AResponse: TFPHTTPConnectionResponse);
+    procedure Get(var ARequest: TFPHTTPConnectionRequest;
+      var AResponse: TFPHTTPConnectionResponse);
+    procedure Post(var ARequest: TFPHTTPConnectionRequest;
+      var AResponse: TFPHTTPConnectionResponse);
   public
-    constructor Create(ServerAddress: string; ServerPort: word; AQueue: TPrackQueue); reintroduce;
+    constructor Create(ServerAddress: string; ServerPort: word; AQueue: TPrackQueue);
+      reintroduce;
     procedure Start;
   end;
 
@@ -42,11 +45,11 @@ procedure TApiServer.Get(var ARequest: TFPHTTPConnectionRequest;
   var AResponse: TFPHTTPConnectionResponse);
 var
   List: TList;
-  I, J: Integer;
+  I, J: integer;
   Connection: TPrackConnection;
   Headers: TJSONObject;
-  HeadersStr: String;
-  FieldName, FieldValue: String;
+  HeadersStr: string;
+  FieldName, FieldValue: string;
 begin
   AResponse.ContentType := 'application/json';
   AResponse.Content := '{"error": "There are no requests pending"}';
@@ -57,7 +60,8 @@ begin
     for I := 0 to List.Count - 1 do
     begin
       Connection := TPrackConnection(List.Items[I]);
-      if Connection.Status <> pcsIncoming then Continue;
+      if Connection.Status <> pcsIncoming then
+        Continue;
 
       Connection.Setup;
       try
@@ -66,13 +70,16 @@ begin
         Headers.Add('SCRIPT_NAME', Trim(Connection.RequestHeaders.ScriptName));
         Headers.Add('PATH_INFO', Trim(Connection.RequestHeaders.Uri));
         Headers.Add('QUERY_STRING', Trim(Connection.RequestHeaders.QueryString));
-        Headers.Add('SERVER_NAME', Trim(ExtractDelimited(1, Connection.RequestHeaders.Host, [':'])));
-        Headers.Add('SERVER_PORT', Trim(ExtractDelimited(2, Connection.RequestHeaders.Host, [':'])));
+        Headers.Add('SERVER_NAME',
+          Trim(ExtractDelimited(1, Connection.RequestHeaders.Host, [':'])));
+        Headers.Add('SERVER_PORT',
+          Trim(ExtractDelimited(2, Connection.RequestHeaders.Host, [':'])));
         for J := 0 to Connection.RequestHeaders.FieldCount - 1 do
         begin
           with Connection.RequestHeaders do
           begin
-            FieldName := Concat('HTTP_', UpperCase(StringReplace(FieldNames[J], '-', '_', [rfReplaceAll])));
+            FieldName := Concat('HTTP_',
+              UpperCase(StringReplace(FieldNames[J], '-', '_', [rfReplaceAll])));
             FieldValue := Trim(FieldValues[J]);
             Headers.Add(FieldName, FieldValue);
           end;
@@ -81,11 +88,13 @@ begin
         HeadersStr := Headers.FormatJSON;
 
       except
-        on E: Exception do Writeln(E.Message);
+        on E: Exception do
+          Writeln(E.Message);
       end;
 
       AResponse.Code := 200;
-      AResponse.Content := '{"identifier": "' + Connection.Identifier + '", "environment": ' + HeadersStr + '}';
+      AResponse.Content := '{"identifier": "' + Connection.Identifier +
+        '", "environment": ' + HeadersStr + '}';
 
       FreeAndNil(Headers);
 
@@ -103,12 +112,12 @@ procedure TApiServer.Post(var ARequest: TFPHTTPConnectionRequest;
   var AResponse: TFPHTTPConnectionResponse);
 var
   List: TList;
-  I, J: Integer;
+  I, J: integer;
   Connection: TPrackConnection;
-  Identifier: String;
-  Code: Integer;
-  Headers: String;
-  Body: String;
+  Identifier: string;
+  Code: integer;
+  Headers: string;
+  Body: string;
   Header: TJSONObject;
   JsonRequest: TJSONData;
 begin
@@ -128,7 +137,9 @@ begin
     for I := 0 to List.Count - 1 do
     begin
       Connection := TPrackConnection(List.Items[I]);
-      if (Connection.Status <> pcsProcessing) or (Connection.Identifier <> Identifier) then Continue;
+      if (Connection.Status <> pcsProcessing) or
+        (Connection.Identifier <> Identifier) then
+        Continue;
 
       try
         Code := JsonRequest.FindPath('code').AsInteger;
@@ -136,12 +147,8 @@ begin
         for J := 0 to JsonRequest.FindPath('headers').Count - 1 do
         begin
           Header := TJSONObject(JsonRequest.FindPath('headers').Items[J]);
-          Headers := Concat(
-            Headers,
-            Header.Names[0], ': ',
-            Header.Items[0].AsString,
-            CRLF
-          );
+          Headers := Concat(Headers, Header.Names[0],
+            ': ', Header.Items[0].AsString, CRLF);
         end;
         Body := JsonRequest.FindPath('body').AsString;
       except
@@ -167,7 +174,8 @@ begin
   end;
 end;
 
-constructor TApiServer.Create(ServerAddress: string; ServerPort: word; AQueue: TPrackQueue);
+constructor TApiServer.Create(ServerAddress: string; ServerPort: word;
+  AQueue: TPrackQueue);
 begin
   inherited Create(nil);
   FQueue := AQueue;
@@ -183,4 +191,3 @@ begin
 end;
 
 end.
-

@@ -29,14 +29,14 @@ type
 
   TApiServer = class(TFPCustomHttpServer)
   private
-    procedure Get(var ARequest: TFPHTTPConnectionRequest;
-      var AResponse: TFPHTTPConnectionResponse);
+    procedure Get(var AResponse: TFPHTTPConnectionResponse);
     procedure Post(var ARequest: TFPHTTPConnectionRequest;
       var AResponse: TFPHTTPConnectionResponse);
     procedure BuildRackHeaders(RequestHeaders: TRequest; var Headers: TJSONObject);
     procedure BuildHTTPHeaders(RequestHeaders: TRequest; var Headers: TJSONObject);
-    function BuildHeaders(Connection: TPrackConnection): string;
     procedure ProcessPost(var Connection: TPrackConnection; Content: string);
+    function BuildHeaders(Connection: TPrackConnection): string;
+    function GetHeadersFromApi(Request: TJSONData): string;
   protected
     FQueue: TPrackQueue;
     procedure RequestHandler(Sender: TObject;
@@ -76,13 +76,12 @@ begin
   AResponse.Code := CODE_NOT_FOUND;
 
   case ARequest.Method of
-    METHOD_GET: Get(ARequest, AResponse);
+    METHOD_GET: Get(AResponse);
     METHOD_POST: Post(ARequest, AResponse);
   end;
 end;
 
-procedure TApiServer.Get(var ARequest: TFPHTTPConnectionRequest;
-  var AResponse: TFPHTTPConnectionResponse);
+procedure TApiServer.Get(var AResponse: TFPHTTPConnectionResponse);
 var
   Connection: TPrackConnection;
 begin
@@ -185,25 +184,29 @@ end;
 
 procedure TApiServer.ProcessPost(var Connection: TPrackConnection; Content: string);
 var
-  Headers: string;
-  I: integer;
-  JsonRequest: TJSONData;
+  Request: TJSONData;
 begin
   Connection.Status := pcsReady;
   try
-    JsonRequest := GetJson(Content);
-    Connection.Response.Code := JsonRequest.FindPath(PATH_CODE).AsInteger;
-    Connection.Response.Body := JsonRequest.FindPath(PATH_BODY).AsString;
-    Headers := '';
-    for I := 0 to JsonRequest.FindPath(PATH_HEADERS).Count - 1 do
-      with TJSONObject(JsonRequest.FindPath(PATH_HEADERS).Items[I]) do
-        Connection.Response.Headers :=
-          Concat(Headers, Format(FORMAT_HEADER, [Names[0], Items[0].AsString]), CRLF);
+    Request := GetJson(Content);
+    Connection.Response.Code := Request.FindPath(PATH_CODE).AsInteger;
+    Connection.Response.Body := Request.FindPath(PATH_BODY).AsString;
+    Connection.Response.Headers := GetHeadersFromApi(Request);
   except
     Connection.Status := pcsError;
   end;
+  FreeAndNil(Request);
+end;
 
-  FreeAndNil(JsonRequest);
+function TApiServer.GetHeadersFromApi(Request: TJSONData): string;
+var
+  I: integer;
+begin
+  Result := '';
+  for I := 0 to Request.FindPath(PATH_HEADERS).Count - 1 do
+    with TJSONObject(Request.FindPath(PATH_HEADERS).Items[I]) do
+      Result := Concat(Result, Format(FORMAT_HEADER,
+        [Names[0], Items[0].AsString]), CRLF);
 end;
 
 end.

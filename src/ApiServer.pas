@@ -36,7 +36,7 @@ type
     procedure BuildRackHeaders(RequestHeaders: TRequest; var Headers: TJSONObject);
     procedure BuildHTTPHeaders(RequestHeaders: TRequest; var Headers: TJSONObject);
     function BuildHeaders(Connection: TPrackConnection): string;
-    procedure ProcessPost(var Connection: TPrackConnection; JsonRequest: TJSONData);
+    procedure ProcessPost(var Connection: TPrackConnection; Content: string);
   protected
     FQueue: TPrackQueue;
     procedure RequestHandler(Sender: TObject;
@@ -161,54 +161,62 @@ var
   JsonRequest: TJSONData;
 begin
   try
-    JsonRequest := GetJSON(ARequest.Content);
-    Identifier := JsonRequest.FindPath(PATH_IDENTIFIER).AsString;
-  except
-    Exit;
+    try
+      JsonRequest := GetJSON(ARequest.Content);
+      Identifier := JsonRequest.FindPath(PATH_IDENTIFIER).AsString;
+    except
+      Exit;
+    end;
+  finally
+    FreeAndNil(JsonRequest);
   end;
 
   Connection := FQueue.Pop(pcsProcessing, Identifier);
-  if not Assigned(Connection) then
+  if Connection = nil then
     Exit;
 
   try
     try
-      ProcessPost(Connection, JsonRequest);
+      Connection.Status := pcsReady;
+      ProcessPost(Connection, ARequest.Content);
     except
-      Writeln('TApiServer.Post: Error parsing the JSON');
-      Connection.Status := pcsError;
-      Exit;
+      on E: Exception do
+      begin
+        Writeln('TApiServer.Post: ', E.Message);
+        Connection.Status := pcsError;
+        Exit;
+      end;
     end;
   finally
     FQueue.Add(Connection);
     FQueue.Event.SetEvent;
-    FreeAndNil(JsonRequest);
   end;
 
   AResponse.Code := 200;
   AResponse.Content := API_THANK_YOU;
 end;
 
-procedure TApiServer.ProcessPost(var Connection: TPrackConnection;
-  JsonRequest: TJSONData);
+procedure TApiServer.ProcessPost(var Connection: TPrackConnection; Content: string);
 var
   Headers: string;
-  Header: string;
   I: integer;
-  JsonHeader: TJSONObject;
+  JsonRequest: TJSONData;
 begin
-  Connection.Response.Code := JsonRequest.FindPath(PATH_CODE).AsInteger;
-  Headers := '';
-  for I := 0 to JsonRequest.FindPath(PATH_HEADERS).Count - 1 do
-  begin
-    JsonHeader := TJSONObject(JsonRequest.FindPath(PATH_HEADERS).Items[I]);
-    Header := Format(FORMAT_HEADER, [JsonHeader.Names[0],
-      JsonHeader.Items[0].AsString]);
-    Connection.Response.Headers := Concat(Headers, Header, CRLF);
-    FreeAndNil(JsonHeader);
+  try
+    JsonRequest := GetJson(Content);
+    Connection.Response.Code := JsonRequest.FindPath(PATH_CODE).AsInteger;
+    Connection.Response.Body := JsonRequest.FindPath(PATH_BODY).AsString;
+    Headers := '';
+    for I := 0 to JsonRequest.FindPath(PATH_HEADERS).Count - 1 do
+      with TJSONObject(JsonRequest.FindPath(PATH_HEADERS).Items[I]) do
+        Connection.Response.Headers :=
+          Concat(Headers, Format(FORMAT_HEADER, [Names[0], Items[0].AsString]), CRLF);
+  except
+    On E: Exception do
+      Writeln('TApiServer.ProcessPost: ', E.Message);
   end;
-  Connection.Response.Body := JsonRequest.FindPath(PATH_BODY).AsString;
-  Connection.Status := pcsReady;
+
+  FreeAndNil(JsonRequest);
 end;
 
 end.

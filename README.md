@@ -4,24 +4,24 @@ The scalable Web Server for humans.
 ## Project goals
 - Small memory footprint, blazing fast multi-threaded Web Server
 - [Rack-like interface](https://www.rubydoc.info/github/rack/rack/master/file/SPEC), so developers can focus on writing Web Frameworks, API, or Web pages without dealing with HTTP internals
-- A design that reduces the needings to add Service Discovery, or Orchestration systems, but still being capable to scale
+- A design that eliminates or reduces Service Discovery or Orchestration systems needings, but still being capable to scale
 - Zero-downtime deployments, without sorcery
 
 ## Background
-Until now, Web Servers were used to receive HTTP requests and pass them directly to Web Apps, using Load Balancers. This requires a lot of effort to planify your infrastructure, as the Web Server needs to know what Web Apps can receive these requests.
+Until now, Web Servers were used to receive HTTP requests and pass them directly to Web Apps, using Load Balancers. This requires a lot of effort to planify your infrastructure, as the Web Server needs to know what backends can receive these requests, or the host where they are listening.
 
-There is an overwhelming amount of puzzle pieces to deal with these individual issues, like Consul, HAProxy, Nomad or Fabio. And thats just fine. You can even use Kubernetes on bigger applications if you don't want to handle these puzzle pieces one by one.
+There is an overwhelming amount of puzzle pieces to deal with these individual issues, like Consul, HAProxy, Nomad or Fabio. And thats just fine, they're amazing tools. You can even use Kubernetes on bigger applications if you don't want to handle these puzzle pieces one by one.
 
-This feels like trying to catch flies using the whole Death Star, on small-medium sized Websites.
+The problem is, on small to medium sized Websites, these tools feels like trying to catch flies using the whole Death Star.
 
-Prack doesn't needs to send the Requests directly to the Web App Servers. Instead, these Servers must contact with Prack, fetch the pending Requests, and send back the result, using Prack's REST API. This design just eliminates the needing of Health Checks, Load Balancing or Service Discovery.
+Prack's design is completely different. Instead, these Servers must contact with Prack, fetch the pending Requests, and send back the HTTP Response, using the REST API. This design just eliminates the needing of Health Checks, Load Balancing or Service Discovery.
 
 ## How Prack works
 With Prack, you can just start the server, and it will start listening for HTTP Requests, storing them into a Requests Queue. These Requests can be handled using a REST API, exposed on a different port.
 
-Basically you have:
-GET /api/v1/request
-POST /api/v1/response
+Basically you have:    
+GET /api/v1/request    
+POST /api/v1/response    
 
 Getting a Request will give you a JSON populated with the Environment variables you are used on any Rack-like Application, like the `REQUEST_METHOD` or the `PATH_INFO`.
 

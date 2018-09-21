@@ -67,7 +67,7 @@ begin
     for I := 0 to List.Count - 1 do
     begin
       Connection := TPrackConnection(List.Items[I]);
-      if Connection.Status <> pcsIncoming then
+      if Connection.Status <> Status then
         Continue;
 
       Result := TPrackConnection(List.Items[I]);

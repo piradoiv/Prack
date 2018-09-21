@@ -8,21 +8,28 @@ uses {$ifdef unix}
   BaseUnix, {$endif}
   Classes,
   SysUtils,
-  Server;
+  Server,
+  Syncobjs;
 
 var
   App: TPrack;
   GatewayHost, ApiHost: string;
   GatewayPort, ApiPort: integer;
+  {$IFDEF UNIX}
+  TerminateEvent: TEventObject;
+
+  {$ENDIF}
 
   procedure SigKillHandler(Sig: longint); cdecl;
   begin
     Write(#8#8, '  ', CRLF, 'Shutting down the server...', CRLF, CRLF);
     App.Active := False;
+    TerminateEvent.SetEvent;
   end;
 
 begin
   {$IFDEF UNIX}
+  TerminateEvent := TEventObject.Create(nil, True, False, '');
   FpSignal(SIGINT, @SigKillHandler);
   {$ENDIF}
 
@@ -51,7 +58,10 @@ begin
   App := TPrack.Create(GatewayHost, GatewayPort, ApiHost, ApiPort);
   App.Start;
 
+  {$IFDEF UNIX}
+  TerminateEvent.WaitFor(INFINITE);
+  {$ENDIF}
+
   FreeAndNil(App);
 end.
-
 

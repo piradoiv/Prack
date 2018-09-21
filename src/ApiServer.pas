@@ -59,7 +59,7 @@ begin
   FQueue := AQueue;
   Address := ServerAddress;
   Port := ServerPort;
-  Threaded := False;
+  Threaded := True;
   OnRequest := @RequestHandler;
 end;
 
@@ -75,6 +75,8 @@ begin
   AResponse.Content := API_DEFAULT_ERROR;
   AResponse.Code := CODE_NOT_FOUND;
 
+  Writeln(Format('API: %s %s', [ARequest.Method, ARequest.URI]));
+
   case ARequest.Method of
     METHOD_GET: Get(AResponse);
     METHOD_POST: Post(ARequest, AResponse);
@@ -85,6 +87,7 @@ procedure TApiServer.Get(var AResponse: TFPHTTPConnectionResponse);
 var
   Connection: TPrackConnection;
 begin
+  FQueue.PendingRequestsEvent.WaitFor(5000);
   Connection := FQueue.Pop(pcsIncoming);
   if not Assigned(Connection) then
     Exit;
@@ -179,7 +182,7 @@ begin
 
   ProcessPost(Connection, ARequest.Content);
   FQueue.Add(Connection);
-  FQueue.Event.SetEvent;
+  FQueue.ReadyRequestsEvent.SetEvent;
 end;
 
 procedure TApiServer.ProcessPost(var Connection: TPrackConnection; Content: string);

@@ -42,8 +42,7 @@ var
 begin
   while not Terminated do
   begin
-    FQueue.Event.WaitFor(1000);
-    FQueue.Event.ResetEvent;
+    FQueue.ReadyRequestsEvent.WaitFor(1000);
     List := FQueue.LockList;
     Amount := List.Count;
     try

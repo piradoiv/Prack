@@ -31,6 +31,7 @@ begin
   Connection := TPrackConnection.Create;
   Connection.Socket := Data;
   FQueue.Add(Connection);
+  FQueue.PendingRequestsEvent.SetEvent;
 end;
 
 constructor TGatewayServer.Create(aHost: string; aPort: word; aQueue: TPrackQueue);

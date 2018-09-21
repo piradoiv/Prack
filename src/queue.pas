@@ -12,11 +12,16 @@ type
   { TPrackQueue }
 
   TPrackQueue = class(TThreadList)
+  private
+    Mutex: TRTLCriticalSection;
+    PendingRequests: integer;
   public
-    Event: TEventObject;
+    ReadyRequestsEvent: TEventObject;
+    PendingRequestsEvent: TEventObject;
     constructor Create;
     destructor Destroy; override;
-    function Count: integer;
+    procedure IncPendingRequests;
+    procedure DecPendingRequests;
     function Pop(Status: TPrackConnectionStatus): TPrackConnection;
     function Pop(Status: TPrackConnectionStatus; Identifier: string): TPrackConnection;
   end;
@@ -27,8 +32,11 @@ implementation
 
 constructor TPrackQueue.Create;
 begin
+  PendingRequests := 0;
+  PendingRequestsEvent := TEventObject.Create(nil, True, True, '');
+  ReadyRequestsEvent := TEventObject.Create(nil, False, False, '');
+  InitCriticalSection(Mutex);
   inherited Create;
-  Event := TEventObject.Create(nil, True, False, '');
 end;
 
 destructor TPrackQueue.Destroy;
@@ -37,22 +45,41 @@ var
   I: integer;
 begin
   List := LockList;
-  FreeAndNil(Event);
+  DoneCriticalSection(Mutex);
   for I := List.Count - 1 downto 0 do
   begin
     TPrackConnection(List.Items[I]).Free;
     List.Items[I] := nil;
   end;
   inherited Destroy;
+  PendingRequestsEvent.SetEvent;
+  FreeAndNil(PendingRequestsEvent);
+  FreeAndNil(ReadyRequestsEvent);
 end;
 
-function TPrackQueue.Count: integer;
-var
-  List: TList;
+procedure TPrackQueue.IncPendingRequests;
 begin
-  List := LockList;
-  Result := List.Count;
-  UnlockList;
+  EnterCriticalSection(Mutex);
+  try
+    Inc(PendingRequests);
+    PendingRequestsEvent.SetEvent;
+  finally
+    LeaveCriticalSection(Mutex);
+  end;
+end;
+
+procedure TPrackQueue.DecPendingRequests;
+begin
+  EnterCriticalSection(Mutex);
+  try
+    if PendingRequests = 0 then
+      Exit;
+    Dec(PendingRequests);
+  finally
+    if PendingRequests = 0 then
+      PendingRequestsEvent.ResetEvent;
+    LeaveCriticalSection(Mutex);
+  end;
 end;
 
 function TPrackQueue.Pop(Status: TPrackConnectionStatus): TPrackConnection;
@@ -75,6 +102,8 @@ begin
       Exit;
     end;
   finally
+    if not Assigned(Result) and (Status = pcsIncoming) then
+      PendingRequestsEvent.ResetEvent;
     UnlockList;
   end;
 end;

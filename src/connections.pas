@@ -67,24 +67,27 @@ var
   Http: string;
   StringStream: TStringStream;
 begin
-  Assert(Response.Code >= 100);
-  Http := Concat('HTTP/1.1 ', IntToStr(Response.Code), ' ',
-    GetStatusCode(Response.Code), CRLF);
-  StringStream := TStringStream.Create(Concat(Http, Response.Headers,
+  Http := Format('HTTP/1.1 %s %s', [IntToStr(Response.Code),
+    GetStatusCode(Response.Code)]);
+  StringStream := TStringStream.Create(Concat(Http, CRLF, Response.Headers,
     CRLF, Response.Body));
   Socket.CopyFrom(StringStream, StringStream.Size);
   FreeAndNil(StringStream);
-  Assert(not Assigned(StringStream));
 end;
 
 procedure TPrackConnection.Setup;
 begin
   if not Assigned(Response) then
     Response := TPrackResponse.Create;
+
   if not Assigned(RequestHeaders) then
   begin
     RequestHeaders := TRequest.Create;
     RequestHeaders.LoadFromStream(Socket, True);
+    if RequestHeaders.Query = '' then
+      Writeln(Format('Gateway: %s %s', [RequestHeaders.Command, RequestHeaders.URI]))
+    else
+      Writeln(Format('Gateway: %s %s?%s', [RequestHeaders.Command, RequestHeaders.URI, RequestHeaders.Query]));
   end;
 end;
 

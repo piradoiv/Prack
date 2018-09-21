@@ -2,36 +2,66 @@ program Prack;
 
 {$mode objfpc}{$H+}
 
-uses
-  {$IFDEF UNIX}
-  Cthreads, Cmem,
-  {$ENDIF}
-  Classes, SysUtils, BaseUnix,
-  Server;
+uses {$ifdef unix}
+  Cthreads,
+  //Cmem,
+  BaseUnix, {$endif}
+  Classes,
+  SysUtils,
+  Server,
+  Syncobjs;
 
 var
-  App: TPrackServer;
-  Host: String;
-  Port: Integer;
+  App: TPrack;
+  GatewayHost, ApiHost: string;
+  GatewayPort, ApiPort: integer;
+  {$IFDEF UNIX}
+  TerminateEvent: TEventObject;
 
-procedure SigKillHandler(Sig : Longint); cdecl;
-begin
-  FreeAndNil(App);
-  Halt(0);
-end;
+  {$ENDIF}
 
-begin
-  FpSignal(SIGINT, @SigKillHandler);
-
-  if ParamStr(1) <> '' then Host := ParamStr(1) else Host := '127.0.0.1';
-  try
-    Port := StrToInt(ParamStr(2));
-  except
-    Port := 8080;
+  procedure SigKillHandler(Sig: longint); cdecl;
+  begin
+    Write(#8#8, '  ', CRLF, 'Shutting down the server...', CRLF, CRLF);
+    App.Active := False;
+    TerminateEvent.SetEvent;
   end;
 
-  Writeln('Starting server on http://', Host, ':', IntToStr(Port));
-  App := TPrackServer.Create(Host, Port);
+begin
+  {$IFDEF UNIX}
+  TerminateEvent := TEventObject.Create(nil, True, False, '');
+  FpSignal(SIGINT, @SigKillHandler);
+  {$ENDIF}
+
+  if ParamStr(1) <> '' then
+    GatewayHost := ParamStr(1)
+  else
+    GatewayHost := Server.DEFAULT_GATEWAY_HOST;
+
+  try
+    GatewayPort := StrToInt(ParamStr(2));
+  except
+    GatewayPort := Server.DEFAULT_GATEWAY_PORT;
+  end;
+
+  if ParamStr(3) <> '' then
+    ApiHost := ParamStr(3)
+  else
+    ApiHost := Server.DEFAULT_API_HOST;
+
+  try
+    APIPort := StrToInt(ParamStr(4));
+  except
+    APIPort := Server.DEFAULT_API_PORT;
+  end;
+
+  App := TPrack.Create(GatewayHost, GatewayPort, ApiHost, ApiPort);
   App.Start;
+
+  {$IFDEF UNIX}
+  TerminateEvent.WaitFor(INFINITE);
+  {$ENDIF}
+
+  FreeAndNil(App);
 end.
 

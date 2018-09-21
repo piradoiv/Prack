@@ -5,80 +5,80 @@ unit Server;
 interface
 
 uses
-  Classes, SysUtils, BlckSock,
-  Common, Requests, Responses;
+  Classes, SysUtils, DateUtils, fpJSON, jsonparser,
+  GatewayServer, ApiServer, Queue, Orchestra;
+
+const
+  DEFAULT_GATEWAY_HOST = '0.0.0.0';
+  DEFAULT_GATEWAY_PORT = 8080;
+  DEFAULT_API_HOST = '0.0.0.0';
+  DEFAULT_API_PORT = 4242;
+  CRLF = #13#10;
 
 type
 
-  { TPrackServer }
+  { TPrack }
 
-  TPrackServer = class
-    private
-      FHost: String;
-      FPort: Integer;
-      FRequestList: TRequestList;
-      FSocket: TTCPBlockSocket;
-
-      FResponsesThread: TPrackResponsesThread;
-
-      procedure StartResponsesThread;
-      procedure StartGatewayListenLoop;
-      procedure HandleGatewayConnection(Request: TRequest);
-    public
-      constructor Create(Host: String = '127.0.0.1'; Port: Integer = 80);
-      procedure Start;
-      destructor Destroy; override;
+  TPrack = class
+  private
+    FGatewayHost: string;
+    FApiHost: string;
+    FGatewayPort: integer;
+    FAPIPort: integer;
+    FGatewayServer: TGatewayServer;
+    FApiServer: TApiServer;
+    FQueue: TPrackQueue;
+    FOrchestra: TOrchestra;
+  public
+    Active: boolean;
+    constructor Create(GatewayHost: string; GatewayPort: integer;
+      ApiHost: string; ApiPort: integer);
+    destructor Destroy; override;
+    procedure Start;
   end;
 
 implementation
 
-{ TPrackServer }
-
-constructor TPrackServer.Create(Host: String; Port: Integer);
+constructor TPrack.Create(GatewayHost: string; GatewayPort: integer;
+  ApiHost: string; ApiPort: integer);
 begin
-  FHost := Host;
-  FPort := Port;
-  FRequestList := TRequestList.Create(True);
-  FSocket := TTCPBlockSocket.Create;
+  Active := False;
+  FQueue := TPrackQueue.Create;
+
+  FOrchestra := TOrchestra.Create(FQueue);
+
+  FGatewayHost := GatewayHost;
+  FGatewayPort := GatewayPort;
+  FGatewayServer := TGatewayServer.Create(FGatewayHost, FGatewayPort, FQueue);
+
+  FApiHost := ApiHost;
+  FApiPort := ApiPort;
+  FApiServer := TApiServer.Create(FApiHost, FApiPort, FQueue);
 end;
 
-procedure TPrackServer.StartResponsesThread;
+procedure TPrack.Start;
 begin
-  FResponsesThread := TPrackResponsesThread.Create(True);
-  with FResponsesThread do
-  begin
-    SetRequestList(@FRequestList);
-    FreeOnTerminate := False;
-    Start;
-  end;
+  Active := True;
+  Writeln(CRLF,
+    '  ________                    ______', CRLF,
+    '  ___  __ \____________ _________  /__', CRLF,
+    '  __  /_/ /_  ___/  __ `/  ___/_  //_/', CRLF,
+    '  _  ____/_  /   / /_/ // /__ _  ,<', CRLF,
+    '  /_/     /_/    \__,_/ \___/ /_/|_| v1.0.0', CRLF);
+  Writeln('Public Server listening on http://', FGatewayHost, ':', FGatewayPort);
+  Writeln('   API Server listening on http://', FApiHost, ':', FApiPort, CRLF);
+
+  TThread.ExecuteInThread(@FGatewayServer.Start);
+  TThread.ExecuteInThread(@FApiServer.Start);
 end;
 
-procedure TPrackServer.StartGatewayListenLoop;
-var
-  FSocketLoop: TSocketLoop;
+destructor TPrack.Destroy;
 begin
-  FSocketLoop := TSocketLoop.Create(FHost, FPort, @HandleGatewayConnection);
-  FSocketLoop.Enable;
-end;
-
-procedure TPrackServer.HandleGatewayConnection(Request: TRequest);
-begin
-  FRequestList.Add(Request);
-  FResponsesThread.Start;
-end;
-
-procedure TPrackServer.Start;
-begin
-  StartResponsesThread;
-  StartGatewayListenLoop;
-end;
-
-destructor TPrackServer.Destroy;
-begin
-  FreeAndNil(FSocket);
-  Writeln(CRLF + '(╯°□°）╯︵ ┻━┻');
+  FreeAndNil(FGatewayServer);
+  FreeAndNil(FApiServer);
+  FreeAndNil(FQueue);
+  Writeln('(╯°□°）╯︵ ┻━┻', CRLF);
   inherited;
 end;
 
 end.
-

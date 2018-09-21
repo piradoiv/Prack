@@ -172,28 +172,15 @@ begin
   end;
 
   Connection := FQueue.Pop(pcsProcessing, Identifier);
-  if Connection = nil then
+  if not Assigned(Connection) then
     Exit;
-
-  try
-    try
-      Connection.Status := pcsReady;
-      ProcessPost(Connection, ARequest.Content);
-    except
-      on E: Exception do
-      begin
-        Writeln('TApiServer.Post: ', E.Message);
-        Connection.Status := pcsError;
-        Exit;
-      end;
-    end;
-  finally
-    FQueue.Add(Connection);
-    FQueue.Event.SetEvent;
-  end;
 
   AResponse.Code := 200;
   AResponse.Content := API_THANK_YOU;
+
+  ProcessPost(Connection, ARequest.Content);
+  FQueue.Add(Connection);
+  FQueue.Event.SetEvent;
 end;
 
 procedure TApiServer.ProcessPost(var Connection: TPrackConnection; Content: string);
@@ -202,6 +189,7 @@ var
   I: integer;
   JsonRequest: TJSONData;
 begin
+  Connection.Status := pcsReady;
   try
     JsonRequest := GetJson(Content);
     Connection.Response.Code := JsonRequest.FindPath(PATH_CODE).AsInteger;
@@ -212,8 +200,7 @@ begin
         Connection.Response.Headers :=
           Concat(Headers, Format(FORMAT_HEADER, [Names[0], Items[0].AsString]), CRLF);
   except
-    On E: Exception do
-      Writeln('TApiServer.ProcessPost: ', E.Message);
+    Connection.Status := pcsError;
   end;
 
   FreeAndNil(JsonRequest);

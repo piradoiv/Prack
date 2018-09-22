@@ -47,6 +47,7 @@ begin
       for I := List.Count - 1 downto 0 do
       begin
         Connection := TPrackConnection(List.Items[I]);
+        Connection.Setup;
 
         if (Connection.Status <> pcsReady) and
           (SecondsBetween(Now, Connection.CreatedAt) >= TIMEOUT_LIMIT) then

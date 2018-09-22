@@ -17,8 +17,7 @@ type
 
   { TPrackResponse }
 
-  TPrackResponse = class
-  public
+  TPrackResponse = record
     Code: integer;
     Headers: string;
     Body: string;
@@ -57,7 +56,6 @@ end;
 destructor TPrackConnection.Destroy;
 begin
   FreeAndNil(Socket);
-  FreeAndNil(Response);
   FreeAndNil(RequestHeaders);
   inherited Destroy;
 end;
@@ -85,9 +83,6 @@ end;
 
 procedure TPrackConnection.Setup;
 begin
-  if not Assigned(Response) then
-    Response := TPrackResponse.Create;
-
   if not Assigned(RequestHeaders) then
   begin
     RequestHeaders := TRequest.Create;

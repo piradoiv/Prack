@@ -106,17 +106,17 @@
         <IsPartOfProject Value="True"/>
       </Unit3>
       <Unit4>
-        <Filename Value="queue.pas"/>
+        <Filename Value="Queue.pas"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="Queue"/>
       </Unit4>
       <Unit5>
-        <Filename Value="orchestra.pas"/>
+        <Filename Value="Orchestra.pas"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="Orchestra"/>
       </Unit5>
       <Unit6>
-        <Filename Value="connections.pas"/>
+        <Filename Value="Connections.pas"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="Connections"/>
       </Unit6>

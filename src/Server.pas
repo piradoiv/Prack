@@ -64,7 +64,7 @@ begin
     '  ___  __ \____________ _________  /__', CRLF,
     '  __  /_/ /_  ___/  __ `/  ___/_  //_/', CRLF,
     '  _  ____/_  /   / /_/ // /__ _  ,<', CRLF,
-    '  /_/     /_/    \__,_/ \___/ /_/|_| v1.0.0', CRLF);
+    '  /_/     /_/    \__,_/ \___/ /_/|_| Proof of Concept', CRLF);
   Writeln('Public Server listening on http://', FGatewayHost, ':', FGatewayPort);
   Writeln('   API Server listening on http://', FApiHost, ':', FApiPort, CRLF);
 

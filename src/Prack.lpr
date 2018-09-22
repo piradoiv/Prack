@@ -3,21 +3,13 @@ program Prack;
 {$mode objfpc}{$H+}
 
 uses
-  {$IFDEF unix}
-  Cthreads,
-  //Cmem,
-  BaseUnix,
-  {$ENDIF}
-  Classes, SysUtils, Server, Syncobjs;
+  Cthreads, Cmem, BaseUnix, Classes, SysUtils, Server, Syncobjs;
 
 var
   App: TPrack;
   GatewayHost, ApiHost: string;
   GatewayPort, ApiPort: integer;
-  {$IFDEF UNIX}
   TerminateEvent: TEventObject;
-
-  {$ENDIF}
 
   procedure SigKillHandler(Sig: longint); cdecl;
   begin
@@ -27,10 +19,8 @@ var
   end;
 
 begin
-  {$IFDEF UNIX}
   TerminateEvent := TEventObject.Create(nil, True, False, '');
   FpSignal(SIGINT, @SigKillHandler);
-  {$ENDIF}
 
   if ParamStr(1) <> '' then
     GatewayHost := ParamStr(1)
@@ -57,10 +47,6 @@ begin
   App := TPrack.Create(GatewayHost, GatewayPort, ApiHost, ApiPort);
   App.Start;
 
-  {$IFDEF UNIX}
   TerminateEvent.WaitFor(INFINITE);
-  {$ENDIF}
-
   FreeAndNil(App);
 end.
-

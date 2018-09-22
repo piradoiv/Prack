@@ -37,16 +37,14 @@ procedure TOrchestra.Execute;
 var
   List: TList;
   Connection: TPrackConnection;
-  Amount: integer;
   I: integer;
 begin
   while not Terminated do
   begin
     FQueue.ReadyRequestsEvent.WaitFor(1000);
     List := FQueue.LockList;
-    Amount := List.Count;
     try
-      for I := Amount - 1 downto 0 do
+      for I := List.Count - 1 downto 0 do
       begin
         Connection := TPrackConnection(List.Items[I]);
 
@@ -69,18 +67,9 @@ begin
           Continue;
 
         // TODO: Responses can be sent in parallel
-        try
-          Connection.SendResponse;
-          List.Remove(Connection);
-          FreeAndNil(Connection);
-        except
-          on E: Exception do
-          begin
-            Writeln('TOrchestra.Execute: ', E.Message);
-            if Assigned(Connection) then
-              FreeAndNil(Connection);
-          end;
-        end;
+        Connection.SendResponse;
+        List.Remove(Connection);
+        FreeAndNil(Connection);
       end;
     finally
       FQueue.UnlockList;

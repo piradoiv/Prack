@@ -67,12 +67,20 @@ var
   Http: string;
   StringStream: TStringStream;
 begin
-  Http := Format('HTTP/1.1 %s %s', [IntToStr(Response.Code),
-    GetStatusCode(Response.Code)]);
-  StringStream := TStringStream.Create(Concat(Http, CRLF, Response.Headers,
-    CRLF, Response.Body));
-  Socket.CopyFrom(StringStream, StringStream.Size);
-  FreeAndNil(StringStream);
+  try
+    try
+      Http := Format('HTTP/1.1 %s %s', [IntToStr(Response.Code),
+        GetStatusCode(Response.Code)]);
+      StringStream := TStringStream.Create(Concat(Http, CRLF, Response.Headers,
+        CRLF, Response.Body));
+      Socket.CopyFrom(StringStream, StringStream.Size);
+    except
+      on E: Exception do
+        Writeln('TPrackConnection.SendResponse: ', E.Message);
+    end;
+  finally
+    FreeAndNil(StringStream);
+  end;
 end;
 
 procedure TPrackConnection.Setup;

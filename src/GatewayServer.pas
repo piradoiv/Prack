@@ -16,7 +16,7 @@ type
     FQueue: TPrackQueue;
     procedure OnConnectHandler(Sender: TObject; Data: TSocketStream);
   public
-    constructor Create(aHost: string; aPort: word; aQueue: TPrackQueue);
+    constructor Create(AHost: string; APort: word; AQueue: TPrackQueue);
     procedure Start;
   end;
 
@@ -34,11 +34,11 @@ begin
   FQueue.PendingRequestsEvent.SetEvent;
 end;
 
-constructor TGatewayServer.Create(aHost: string; aPort: word; aQueue: TPrackQueue);
+constructor TGatewayServer.Create(AHost: string; APort: word; AQueue: TPrackQueue);
 begin
   FQueue := AQueue;
   OnConnect := @OnConnectHandler;
-  inherited Create(aHost, aPort);
+  inherited Create(AHost, APort);
 end;
 
 procedure TGatewayServer.Start;

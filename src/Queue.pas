@@ -20,8 +20,6 @@ type
     PendingRequestsEvent: TEventObject;
     constructor Create;
     destructor Destroy; override;
-    procedure IncPendingRequests;
-    procedure DecPendingRequests;
     function Pop(Status: TPrackConnectionStatus): TPrackConnection;
     function Pop(Status: TPrackConnectionStatus; Identifier: string): TPrackConnection;
   end;
@@ -55,31 +53,6 @@ begin
   PendingRequestsEvent.SetEvent;
   FreeAndNil(PendingRequestsEvent);
   FreeAndNil(ReadyRequestsEvent);
-end;
-
-procedure TPrackQueue.IncPendingRequests;
-begin
-  EnterCriticalSection(Mutex);
-  try
-    Inc(PendingRequests);
-    PendingRequestsEvent.SetEvent;
-  finally
-    LeaveCriticalSection(Mutex);
-  end;
-end;
-
-procedure TPrackQueue.DecPendingRequests;
-begin
-  EnterCriticalSection(Mutex);
-  try
-    if PendingRequests = 0 then
-      Exit;
-    Dec(PendingRequests);
-  finally
-    if PendingRequests = 0 then
-      PendingRequestsEvent.ResetEvent;
-    LeaveCriticalSection(Mutex);
-  end;
 end;
 
 function TPrackQueue.Pop(Status: TPrackConnectionStatus): TPrackConnection;

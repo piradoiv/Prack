@@ -2,14 +2,13 @@ program Prack;
 
 {$mode objfpc}{$H+}
 
-uses {$ifdef unix}
+uses
+  {$IFDEF unix}
   Cthreads,
   //Cmem,
-  BaseUnix, {$endif}
-  Classes,
-  SysUtils,
-  Server,
-  Syncobjs;
+  BaseUnix,
+  {$ENDIF}
+  Classes, SysUtils, Server, Syncobjs;
 
 var
   App: TPrack;

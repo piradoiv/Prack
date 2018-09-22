@@ -5,8 +5,8 @@ unit Server;
 interface
 
 uses
-  Classes, SysUtils, DateUtils, fpJSON, jsonparser,
-  GatewayServer, ApiServer, Queue, Orchestra;
+  Classes, SysUtils, DateUtils, fpJSON, JSONParser, GatewayServer,
+  ApiServer, Queue, Orchestra;
 
 const
   DEFAULT_GATEWAY_HOST = '0.0.0.0';

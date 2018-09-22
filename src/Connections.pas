@@ -5,7 +5,7 @@ unit Connections;
 interface
 
 uses
-  Classes, SysUtils, ssockets, httpdefs, fphttpserver;
+  Classes, SysUtils, SSockets, HTTPDefs, FPHTTPServer;
 
 const
   CRLF = #13#10;

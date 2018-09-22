@@ -13,10 +13,6 @@ const
   API_DEFAULT_ERROR = '{"error": "There are no requests pending"}';
   API_THANK_YOU = '{"message": "thank you"}';
   API_GET_JSON = '{"identifier": "%s", "environment": %s}';
-  CODE_NOT_FOUND = 404;
-  METHOD_GET = 'GET';
-  METHOD_POST = 'POST';
-  HTTP_HEADER_PREFIX = 'HTTP_';
   PATH_IDENTIFIER = 'identifier';
   PATH_CODE = 'code';
   PATH_HEADERS = 'headers';
@@ -73,13 +69,13 @@ procedure TApiServer.RequestHandler(Sender: TObject;
 begin
   AResponse.ContentType := API_CONTENT_TYPE;
   AResponse.Content := API_DEFAULT_ERROR;
-  AResponse.Code := CODE_NOT_FOUND;
+  AResponse.Code := 404;
 
   Writeln(Format('API: %s %s', [ARequest.Method, ARequest.URI]));
 
   case ARequest.Method of
-    METHOD_GET: Get(AResponse);
-    METHOD_POST: Post(ARequest, AResponse);
+    'GET': Get(AResponse);
+    'POST': Post(ARequest, AResponse);
   end;
 end;
 
@@ -151,7 +147,7 @@ begin
     FieldName := RequestHeaders.FieldNames[I];
     FieldName := StringReplace(FieldName, '-', '_', [rfReplaceAll]);
     FieldValue := Trim(RequestHeaders.FieldValues[I]);
-    Headers.Add(Concat(HTTP_HEADER_PREFIX, UpperCase(FieldName)), FieldValue);
+    Headers.Add(Concat('HTTP_', UpperCase(FieldName)), FieldValue);
   end;
 end;
 

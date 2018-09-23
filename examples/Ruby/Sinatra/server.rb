@@ -1,4 +1,4 @@
-require '../Handler/rack/handler/prack.rb'
+require '../Handler/prack.rb'
 require 'sinatra'
 
 set :server, :prack

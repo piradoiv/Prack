@@ -8,7 +8,12 @@
     "license": "MIT",
     "authors": [
         {
-            "name": "Ricardo Cruz",
+            "name": "Ricardo Cruz"
         }
-    ]
+    ],
+    "autoload": {
+        "psr-4": {
+            "Prack\\": "src/"
+        }
+    }
 }

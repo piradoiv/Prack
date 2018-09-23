@@ -1,0 +1,14 @@
+{
+    "name": "piradoiv/php-prack",
+    "description": "Prack backend server example",
+    "type": "project",
+    "require": {
+        "slim/slim": "^3.11"
+    },
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Ricardo Cruz",
+        }
+    ]
+}

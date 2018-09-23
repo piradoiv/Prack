@@ -1,0 +1,15 @@
+GEM
+  remote: https://rubygems.org/
+  specs:
+    json (2.1.0)
+    rack (2.0.5)
+
+PLATFORMS
+  ruby
+
+DEPENDENCIES
+  json (~> 2.1)
+  rack (< 3.0)
+
+BUNDLED WITH
+   1.16.1

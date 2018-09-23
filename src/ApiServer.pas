@@ -6,7 +6,7 @@ interface
 
 uses
   Classes, SysUtils, FpHTTPServer, DateUtils, FpJson, JsonParser,
-  HttpDefs, Queue, StrUtils, Connections;
+  HttpDefs, Queue, StrUtils, Connections, Base64;
 
 const
   API_CONTENT_TYPE = 'application/json';
@@ -184,15 +184,22 @@ end;
 procedure TApiServer.ProcessPost(var Connection: TPrackConnection; Content: string);
 var
   Request: TJSONData;
+  BodyArray: TJSONArray;
+  I: Integer;
 begin
   Connection.Status := pcsReady;
   try
     Request := GetJson(Content);
-    Connection.Response.Code := Request.FindPath(PATH_CODE).AsInteger;
-    Connection.Response.Body := Request.FindPath(PATH_BODY).AsString;
+
+    Connection.Response.Code := StrToInt(Request.FindPath(PATH_CODE).AsString);
+    Connection.Response.Body := DecodeStringBase64(Request.FindPath(PATH_BODY).AsString);
     Connection.Response.Headers := GetHeadersFromApi(Request);
   except
-    Connection.Status := pcsError;
+    on E: Exception do
+    begin
+      Connection.Status := pcsError;
+      Writeln(E.Message);
+    end;
   end;
   FreeAndNil(Request);
 end;
@@ -200,12 +207,19 @@ end;
 function TApiServer.GetHeadersFromApi(Request: TJSONData): string;
 var
   I: integer;
+  Key, Value: String;
 begin
   Result := '';
-  for I := 0 to Request.FindPath(PATH_HEADERS).Count - 1 do
-    with TJSONObject(Request.FindPath(PATH_HEADERS).Items[I]) do
-      Result := Concat(Result, Format(FORMAT_HEADER,
-        [Names[0], Items[0].AsString]), CRLF);
+  try
+    for I := 0 to Request.FindPath(PATH_HEADERS).Count - 1 do
+    begin
+      Key := TJSONObject(Request.FindPath(PATH_HEADERS)).Names[I];
+      Value := Request.FindPath(PATH_HEADERS).Items[I].AsString;
+      Result := Concat(Result, Format(FORMAT_HEADER, [Key, Value]), CRLF);
+    end;
+  except
+    on E: Exception do Writeln(E.Message);
+  end;
 end;
 
 end.

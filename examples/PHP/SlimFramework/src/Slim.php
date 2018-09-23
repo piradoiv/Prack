@@ -33,7 +33,7 @@ class Slim
                 (object) ['Content-length' => strlen($body)],
                 (object) ['Connection' => 'close'],
             ],
-            'body' => $body,
+            'body' => base64_encode($body),
         ]);
     }
 

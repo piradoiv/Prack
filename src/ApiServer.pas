@@ -184,13 +184,10 @@ end;
 procedure TApiServer.ProcessPost(var Connection: TPrackConnection; Content: string);
 var
   Request: TJSONData;
-  BodyArray: TJSONArray;
-  I: Integer;
 begin
   Connection.Status := pcsReady;
   try
     Request := GetJson(Content);
-
     Connection.Response.Code := StrToInt(Request.FindPath(PATH_CODE).AsString);
     Connection.Response.Body := DecodeStringBase64(Request.FindPath(PATH_BODY).AsString);
     Connection.Response.Headers := GetHeadersFromApi(Request);
@@ -198,7 +195,7 @@ begin
     on E: Exception do
     begin
       Connection.Status := pcsError;
-      Writeln(E.Message);
+      Writeln('TApiServer.ProcessPost: ', E.Message);
     end;
   end;
   FreeAndNil(Request);

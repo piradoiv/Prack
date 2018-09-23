@@ -28,10 +28,10 @@ class Slim
         return json_encode([
             'identifier' => $_SERVER['PRACK_IDENTIFIER'],
             'code' => $this->_response->getStatusCode(),
-            'headers' => (object) [
-                (object) ['Content-Type' => 'text/html'],
-                (object) ['Content-length' => strlen($body)],
-                (object) ['Connection' => 'close'],
+            'headers' => [
+                'Content-Type' => 'text/html',
+                'Content-length' => strlen($body),
+                'Connection' => 'close',
             ],
             'body' => base64_encode($body),
         ]);

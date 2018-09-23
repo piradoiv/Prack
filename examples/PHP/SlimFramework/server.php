@@ -54,9 +54,11 @@ while (true) {
         continue;
     }
 
+    $json = (array) json_decode($request);
+    echo "{$json['environment']->REQUEST_METHOD}: {$json['identifier']}\n";
+
     // 2. We need to prepare the $_SERVER environment so the framework
     //    can understand the request
-    $json = (array) json_decode($request);
     $env = (array) $json['environment'];
     foreach ($env as $key => $value) {
         $_SERVER[$key] = $value;

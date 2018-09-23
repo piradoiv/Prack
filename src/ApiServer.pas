@@ -128,7 +128,7 @@ begin
   begin
     Add('REQUEST_METHOD', Trim(RequestHeaders.Command));
     Add('SCRIPT_NAME', Trim(RequestHeaders.ScriptName));
-    Add('PATH_INFO', Trim(RequestHeaders.Uri));
+    Add('PATH_INFO', Trim(RequestHeaders.URI));
     Add('QUERY_STRING', Trim(RequestHeaders.QueryString));
     Add('SERVER_NAME', Trim(ServerName));
     Add('SERVER_PORT', Trim(ServerPort));

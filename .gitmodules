@@ -1,0 +1,3 @@
+[submodule "examples/Go/prack-go"]
+	path = examples/Go/prack-go
+	url = git@github.com:piradoiv/prack-go.git

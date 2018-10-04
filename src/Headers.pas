@@ -22,10 +22,6 @@ var
 begin
   ServerName := ExtractDelimited(1, RequestHeaders.Host, [':']);
   ServerPort := ExtractDelimited(2, RequestHeaders.Host, [':']);
-  Assert(ServerName <> '');
-  Assert(ServerPort <> '');
-  Assert(RequestHeaders.Command <> '');
-
   with Headers do
   begin
     Add('REQUEST_METHOD', Trim(RequestHeaders.Command));
@@ -84,7 +80,7 @@ begin
     end;
   except
     on E: Exception do
-      Writeln(E.Message);
+      Writeln('GetHeadersFromApi: ', E.Message);
   end;
 end;
 

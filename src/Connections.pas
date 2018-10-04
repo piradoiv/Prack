@@ -18,25 +18,25 @@ type
   { TPrackResponse }
 
   TPrackResponse = record
+    Body: string;
     Code: integer;
     Headers: string;
-    Body: string;
   end;
 
   { TPrackConnection }
 
   TPrackConnection = class
   public
-    Identifier: string;
     CreatedAt: TDateTime;
-    Status: TPrackConnectionStatus;
-    Socket: TSocketStream;
+    Identifier: string;
     Request: TRequest;
     Response: TPrackResponse;
+    Socket: TSocketStream;
+    Status: TPrackConnectionStatus;
     constructor Create(Data: TSocketStream);
     destructor Destroy; override;
-    procedure SetErrorResponse(Code: integer; Body: string);
     procedure SendResponse;
+    procedure SetErrorResponse(Code: integer; Body: string);
     procedure Setup;
   end;
 

@@ -33,13 +33,9 @@ implementation
 
 const
   PENDING_REQUESTS_WAIT_LIMIT = 5000;
-  API_CONTENT_TYPE = 'application/json';
   API_DEFAULT_ERROR = '{"error": "There are no requests pending"}';
   API_THANK_YOU = '{"message": "thank you"}';
   API_GET_JSON = '{"identifier": "%s", "environment": %s}';
-  PATH_IDENTIFIER = 'identifier';
-  PATH_CODE = 'code';
-  PATH_BODY = 'body';
 
 { TApiServer }
 
@@ -62,7 +58,7 @@ end;
 procedure TApiServer.RequestHandler(Sender: TObject;
   var ARequest: TFPHTTPConnectionRequest; var AResponse: TFPHTTPConnectionResponse);
 begin
-  AResponse.ContentType := API_CONTENT_TYPE;
+  AResponse.ContentType := CONTENT_TYPE_JSON;
   AResponse.Content := API_DEFAULT_ERROR;
   AResponse.Code := 404;
 
@@ -101,7 +97,7 @@ begin
   try
     try
       JsonRequest := GetJSON(ARequest.Content);
-      Identifier := JsonRequest.FindPath(PATH_IDENTIFIER).AsString;
+      Identifier := JsonRequest.FindPath('identifier').AsString;
     except
       Exit;
     end;
@@ -128,8 +124,8 @@ begin
   Connection.Status := pcsReady;
   try
     Request := GetJson(Content);
-    Connection.Response.Code := StrToInt(Request.FindPath(PATH_CODE).AsString);
-    Connection.Response.Body := DecodeStringBase64(Request.FindPath(PATH_BODY).AsString);
+    Connection.Response.Code := StrToInt(Request.FindPath('code').AsString);
+    Connection.Response.Body := DecodeStringBase64(Request.FindPath('body').AsString);
     Connection.Response.Headers := GetHeadersFromApi(Request);
   except
     on E: Exception do

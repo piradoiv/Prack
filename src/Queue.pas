@@ -15,8 +15,8 @@ type
   private
     Mutex: TRTLCriticalSection;
   public
-    ReadyRequestsEvent: TEventObject;
     PendingRequestsEvent: TEventObject;
+    ReadyRequestsEvent: TEventObject;
     constructor Create;
     destructor Destroy; override;
     function Pop(Status: TPrackConnectionStatus): TPrackConnection;

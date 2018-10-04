@@ -7,6 +7,9 @@ interface
 uses
   Classes, SysUtils, Connections, HttpDefs, fpJson, JsonParser, StrUtils;
 
+const
+  CONTENT_TYPE_JSON = 'application/json';
+
 function BuildHeaders(Connection: TPrackConnection): string;
 function GetHeadersFromApi(Request: TJSONData): string;
 

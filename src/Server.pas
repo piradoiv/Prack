@@ -5,8 +5,7 @@ unit Server;
 interface
 
 uses
-  Classes, SysUtils, DateUtils, fpJSON, JSONParser, GatewayServer,
-  ApiServer, Queue, Orchestra;
+  Classes, SysUtils, GatewayServer, ApiServer, Queue, Orchestra;
 
 const
   DEFAULT_GATEWAY_HOST = '0.0.0.0';
@@ -21,14 +20,14 @@ type
 
   TPrack = class
   private
-    FGatewayHost: string;
     FApiHost: string;
-    FGatewayPort: integer;
-    FAPIPort: integer;
-    FGatewayServer: TGatewayServer;
+    FApiPort: integer;
     FApiServer: TApiServer;
-    FQueue: TPrackQueue;
+    FGatewayHost: string;
+    FGatewayPort: integer;
+    FGatewayServer: TGatewayServer;
     FOrchestra: TOrchestra;
+    FQueue: TPrackQueue;
     procedure PrintBanner;
   public
     Active: boolean;

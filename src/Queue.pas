@@ -5,7 +5,7 @@ unit Queue;
 interface
 
 uses
-  Classes, SysUtils, HttpDefs, Syncobjs, Connections;
+  Classes, SysUtils, Syncobjs, Connections;
 
 type
 

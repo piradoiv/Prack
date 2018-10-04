@@ -5,7 +5,7 @@ unit GatewayServer;
 interface
 
 uses
-  Classes, SysUtils, DateUtils, HttpDefs, SSockets, Queue, Connections;
+  Classes, SysUtils, SSockets, Queue, Connections;
 
 type
 

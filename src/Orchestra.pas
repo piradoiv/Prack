@@ -8,7 +8,7 @@ uses
   Classes, SysUtils, Queue, DateUtils, Connections;
 
 const
-  TIMEOUT_LIMIT = 60;
+  TIMEOUT_SECONDS_LIMIT = 60;
   READY_REQUEST_LIMIT = 1000;
 
 type
@@ -61,12 +61,12 @@ begin
     Connection := TPrackConnection(List.Items[I]);
     Connection.Setup;
 
+    if (Connection.Status <> pcsReady) and
+      (SecondsBetween(Now, Connection.CreatedAt) >= TIMEOUT_SECONDS_LIMIT) then
+      Connection.SetErrorResponse(504, 'Timeout' + CRLF);
+
     if Connection.Status = pcsError then
       Connection.SetErrorResponse(502, 'Backend error' + CRLF);
-
-    if (Connection.Status <> pcsReady) and
-      (SecondsBetween(Now, Connection.CreatedAt) >= TIMEOUT_LIMIT) then
-      Connection.SetErrorResponse(504, 'Timeout' + CRLF);
 
     if Connection.Status <> pcsReady then
       Continue;

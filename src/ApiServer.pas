@@ -9,6 +9,7 @@ uses
   HttpDefs, Queue, StrUtils, Connections, Base64;
 
 const
+  PENDING_REQUESTS_WAIT_LIMIT = 5000;
   API_CONTENT_TYPE = 'application/json';
   API_DEFAULT_ERROR = '{"error": "There are no requests pending"}';
   API_THANK_YOU = '{"message": "thank you"}';
@@ -25,14 +26,14 @@ type
 
   TApiServer = class(TFPCustomHttpServer)
   private
+    function BuildHeaders(Connection: TPrackConnection): string;
+    procedure BuildHTTPHeaders(RequestHeaders: TRequest; var Headers: TJSONObject);
+    procedure BuildRackHeaders(RequestHeaders: TRequest; var Headers: TJSONObject);
     procedure Get(var AResponse: TFPHTTPConnectionResponse);
+    function GetHeadersFromApi(Request: TJSONData): string;
     procedure Post(var ARequest: TFPHTTPConnectionRequest;
       var AResponse: TFPHTTPConnectionResponse);
-    procedure BuildRackHeaders(RequestHeaders: TRequest; var Headers: TJSONObject);
-    procedure BuildHTTPHeaders(RequestHeaders: TRequest; var Headers: TJSONObject);
     procedure ProcessPost(var Connection: TPrackConnection; Content: string);
-    function BuildHeaders(Connection: TPrackConnection): string;
-    function GetHeadersFromApi(Request: TJSONData): string;
   protected
     FQueue: TPrackQueue;
     procedure RequestHandler(Sender: TObject;
@@ -83,7 +84,7 @@ procedure TApiServer.Get(var AResponse: TFPHTTPConnectionResponse);
 var
   Connection: TPrackConnection;
 begin
-  FQueue.PendingRequestsEvent.WaitFor(5000);
+  FQueue.PendingRequestsEvent.WaitFor(PENDING_REQUESTS_WAIT_LIMIT);
   Connection := FQueue.Pop(pcsIncoming);
   if not Assigned(Connection) then
     Exit;

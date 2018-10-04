@@ -5,20 +5,8 @@ unit ApiServer;
 interface
 
 uses
-  Classes, SysUtils, FpHTTPServer, DateUtils, FpJson, JsonParser,
-  HttpDefs, Queue, StrUtils, Connections, Base64;
-
-const
-  PENDING_REQUESTS_WAIT_LIMIT = 5000;
-  API_CONTENT_TYPE = 'application/json';
-  API_DEFAULT_ERROR = '{"error": "There are no requests pending"}';
-  API_THANK_YOU = '{"message": "thank you"}';
-  API_GET_JSON = '{"identifier": "%s", "environment": %s}';
-  PATH_IDENTIFIER = 'identifier';
-  PATH_CODE = 'code';
-  PATH_HEADERS = 'headers';
-  PATH_BODY = 'body';
-  FORMAT_HEADER = '%s: %s';
+  Classes, SysUtils, FpHTTPServer, FpJson, JsonParser, Queue,
+  Connections, Base64, Headers;
 
 type
 
@@ -26,11 +14,7 @@ type
 
   TApiServer = class(TFPCustomHttpServer)
   private
-    function BuildHeaders(Connection: TPrackConnection): string;
-    procedure BuildHTTPHeaders(RequestHeaders: TRequest; var Headers: TJSONObject);
-    procedure BuildRackHeaders(RequestHeaders: TRequest; var Headers: TJSONObject);
     procedure Get(var AResponse: TFPHTTPConnectionResponse);
-    function GetHeadersFromApi(Request: TJSONData): string;
     procedure Post(var ARequest: TFPHTTPConnectionRequest;
       var AResponse: TFPHTTPConnectionResponse);
     procedure ProcessPost(var Connection: TPrackConnection; Content: string);
@@ -46,6 +30,16 @@ type
   end;
 
 implementation
+
+const
+  PENDING_REQUESTS_WAIT_LIMIT = 5000;
+  API_CONTENT_TYPE = 'application/json';
+  API_DEFAULT_ERROR = '{"error": "There are no requests pending"}';
+  API_THANK_YOU = '{"message": "thank you"}';
+  API_GET_JSON = '{"identifier": "%s", "environment": %s}';
+  PATH_IDENTIFIER = 'identifier';
+  PATH_CODE = 'code';
+  PATH_BODY = 'body';
 
 { TApiServer }
 
@@ -97,61 +91,6 @@ begin
   FQueue.Add(Connection);
 end;
 
-function TApiServer.BuildHeaders(Connection: TPrackConnection): string;
-var
-  Headers: TJSONObject;
-begin
-  Headers := TJSONObject.Create;
-  try
-    BuildRackHeaders(Connection.Request, Headers);
-    BuildHTTPHeaders(Connection.Request, Headers);
-    Result := Headers.FormatJSON;
-    Assert(Result <> '');
-  except
-    on E: Exception do
-      Writeln('TApiServer.BuildHeaders: ', E.Message);
-  end;
-  FreeAndNil(Headers);
-end;
-
-procedure TApiServer.BuildRackHeaders(RequestHeaders: TRequest;
-  var Headers: TJSONObject);
-var
-  ServerName, ServerPort: string;
-begin
-  ServerName := ExtractDelimited(1, RequestHeaders.Host, [':']);
-  ServerPort := ExtractDelimited(2, RequestHeaders.Host, [':']);
-  Assert(ServerName <> '');
-  Assert(ServerPort <> '');
-  Assert(RequestHeaders.Command <> '');
-
-  with Headers do
-  begin
-    Add('REQUEST_METHOD', Trim(RequestHeaders.Command));
-    Add('SCRIPT_NAME', Trim(RequestHeaders.ScriptName));
-    Add('PATH_INFO', Trim(RequestHeaders.URI));
-    Add('QUERY_STRING', Trim(RequestHeaders.QueryString));
-    Add('SERVER_NAME', Trim(ServerName));
-    Add('SERVER_PORT', Trim(ServerPort));
-  end;
-end;
-
-procedure TApiServer.BuildHTTPHeaders(RequestHeaders: TRequest;
-  var Headers: TJSONObject);
-var
-  I: integer;
-  FieldName, FieldValue: string;
-begin
-  // TODO: FieldCount, FieldNames and FieldValues has been deprecated
-  for I := 0 to RequestHeaders.FieldCount - 1 do
-  begin
-    FieldName := RequestHeaders.FieldNames[I];
-    FieldName := StringReplace(FieldName, '-', '_', [rfReplaceAll]);
-    FieldValue := Trim(RequestHeaders.FieldValues[I]);
-    Headers.Add(Concat('HTTP_', UpperCase(FieldName)), FieldValue);
-  end;
-end;
-
 procedure TApiServer.Post(var ARequest: TFPHTTPConnectionRequest;
   var AResponse: TFPHTTPConnectionResponse);
 var
@@ -200,25 +139,6 @@ begin
     end;
   end;
   FreeAndNil(Request);
-end;
-
-function TApiServer.GetHeadersFromApi(Request: TJSONData): string;
-var
-  I: integer;
-  Key, Value: string;
-begin
-  Result := '';
-  try
-    for I := 0 to Request.FindPath(PATH_HEADERS).Count - 1 do
-    begin
-      Key := TJSONObject(Request.FindPath(PATH_HEADERS)).Names[I];
-      Value := Request.FindPath(PATH_HEADERS).Items[I].AsString;
-      Result := Concat(Result, Format(FORMAT_HEADER, [Key, Value]), CRLF);
-    end;
-  except
-    on E: Exception do
-      Writeln(E.Message);
-  end;
 end;
 
 end.

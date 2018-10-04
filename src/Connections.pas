@@ -69,8 +69,8 @@ begin
     try
       Http := Format('HTTP/1.1 %s %s', [IntToStr(Response.Code),
         GetStatusCode(Response.Code)]);
-      StringStream := TStringStream.Create(Concat(Http, CRLF, Response.Headers,
-        CRLF, Response.Body));
+      StringStream := TStringStream.Create(Concat(Http, CRLF,
+        Response.Headers, CRLF, Response.Body));
       Socket.CopyFrom(StringStream, StringStream.Size);
     except
       on E: Exception do
@@ -90,7 +90,8 @@ begin
     if RequestHeaders.Query = '' then
       Writeln(Format('Gateway: %s %s', [RequestHeaders.Command, RequestHeaders.URI]))
     else
-      Writeln(Format('Gateway: %s %s?%s', [RequestHeaders.Command, RequestHeaders.URI, RequestHeaders.Query]));
+      Writeln(Format('Gateway: %s %s?%s', [RequestHeaders.Command,
+        RequestHeaders.URI, RequestHeaders.Query]));
   end;
 end;
 

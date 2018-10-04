@@ -204,7 +204,7 @@ end;
 function TApiServer.GetHeadersFromApi(Request: TJSONData): string;
 var
   I: integer;
-  Key, Value: String;
+  Key, Value: string;
 begin
   Result := '';
   try
@@ -215,7 +215,8 @@ begin
       Result := Concat(Result, Format(FORMAT_HEADER, [Key, Value]), CRLF);
     end;
   except
-    on E: Exception do Writeln(E.Message);
+    on E: Exception do
+      Writeln(E.Message);
   end;
 end;
 

@@ -3,7 +3,13 @@ program Prack;
 {$mode objfpc}{$H+}
 
 uses
-  Cthreads, Cmem, BaseUnix, Classes, SysUtils, Server, Syncobjs;
+  Cthreads,
+  Cmem,
+  BaseUnix,
+  Classes,
+  SysUtils,
+  Server,
+  Syncobjs;
 
 var
   App: TPrack;

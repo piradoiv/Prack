@@ -31,7 +31,7 @@ type
     CreatedAt: TDateTime;
     Status: TPrackConnectionStatus;
     Socket: TSocketStream;
-    RequestHeaders: TRequest;
+    Request: TRequest;
     Response: TPrackResponse;
     constructor Create(Data: TSocketStream);
     destructor Destroy; override;
@@ -58,7 +58,7 @@ end;
 destructor TPrackConnection.Destroy;
 begin
   FreeAndNil(Socket);
-  FreeAndNil(RequestHeaders);
+  FreeAndNil(Request);
   inherited Destroy;
 end;
 
@@ -72,35 +72,35 @@ end;
 procedure TPrackConnection.SendResponse;
 var
   Http: string;
-  StringStream: TStringStream;
+  ResponseStream: TStringStream;
 begin
   try
     try
       Http := Format('HTTP/1.1 %s %s', [IntToStr(Response.Code),
         GetStatusCode(Response.Code)]);
-      StringStream := TStringStream.Create(Concat(Http, CRLF,
-        Response.Headers, CRLF, Response.Body));
-      Socket.CopyFrom(StringStream, StringStream.Size);
+      ResponseStream := TStringStream.Create(Concat(
+        Http, CRLF, Response.Headers, CRLF, Response.Body));
+      Socket.CopyFrom(ResponseStream, ResponseStream.Size);
     except
       on E: Exception do
         Writeln('TPrackConnection.SendResponse: ', E.Message);
     end;
   finally
-    FreeAndNil(StringStream);
+    FreeAndNil(ResponseStream);
   end;
 end;
 
 procedure TPrackConnection.Setup;
 begin
-  if not Assigned(RequestHeaders) then
+  if not Assigned(Request) then
   begin
-    RequestHeaders := TRequest.Create;
-    RequestHeaders.LoadFromStream(Socket, True);
-    if RequestHeaders.Query = '' then
-      Writeln(Format('Gateway: %s %s', [RequestHeaders.Command, RequestHeaders.URI]))
+    Request := TRequest.Create;
+    Request.LoadFromStream(Socket, True);
+    if Request.Query = '' then
+      Writeln(Format('Gateway: %s %s', [Request.Command, Request.URI]))
     else
-      Writeln(Format('Gateway: %s %s?%s', [RequestHeaders.Command,
-        RequestHeaders.URI, RequestHeaders.Query]));
+      Writeln(Format('Gateway: %s %s?%s', [Request.Command, Request.URI,
+        Request.Query]));
   end;
 end;
 

@@ -102,8 +102,8 @@ var
 begin
   Headers := TJSONObject.Create;
   try
-    BuildRackHeaders(Connection.RequestHeaders, Headers);
-    BuildHTTPHeaders(Connection.RequestHeaders, Headers);
+    BuildRackHeaders(Connection.Request, Headers);
+    BuildHTTPHeaders(Connection.Request, Headers);
     Result := Headers.FormatJSON;
     Assert(Result <> '');
   except

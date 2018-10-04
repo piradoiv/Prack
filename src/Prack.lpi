@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <CONFIG>
   <ProjectOptions>
-    <Version Value="11"/>
+    <Version Value="10"/>
     <General>
       <Flags>
         <MainUnitHasCreateFormStatements Value="False"/>
@@ -85,8 +85,9 @@
       <Version Value="2"/>
     </PublishOptions>
     <RunParams>
-      <FormatVersion Value="2"/>
-      <Modes Count="0"/>
+      <local>
+        <FormatVersion Value="1"/>
+      </local>
     </RunParams>
     <Units Count="7">
       <Unit0>
@@ -108,17 +109,14 @@
       <Unit4>
         <Filename Value="Queue.pas"/>
         <IsPartOfProject Value="True"/>
-        <UnitName Value="Queue"/>
       </Unit4>
       <Unit5>
         <Filename Value="Orchestra.pas"/>
         <IsPartOfProject Value="True"/>
-        <UnitName Value="Orchestra"/>
       </Unit5>
       <Unit6>
         <Filename Value="Connections.pas"/>
         <IsPartOfProject Value="True"/>
-        <UnitName Value="Connections"/>
       </Unit6>
     </Units>
   </ProjectOptions>

@@ -24,16 +24,6 @@ implementation
 
 { TGatewayServer }
 
-procedure TGatewayServer.OnConnectHandler(Sender: TObject; Data: TSocketStream);
-var
-  Connection: TPrackConnection;
-begin
-  Connection := TPrackConnection.Create;
-  Connection.Socket := Data;
-  FQueue.Add(Connection);
-  FQueue.PendingRequestsEvent.SetEvent;
-end;
-
 constructor TGatewayServer.Create(AHost: string; APort: word; AQueue: TPrackQueue);
 begin
   FQueue := AQueue;
@@ -44,6 +34,15 @@ end;
 procedure TGatewayServer.Start;
 begin
   StartAccepting;
+end;
+
+procedure TGatewayServer.OnConnectHandler(Sender: TObject; Data: TSocketStream);
+var
+  Connection: TPrackConnection;
+begin
+  Connection := TPrackConnection.Create(Data);
+  FQueue.Add(Connection);
+  FQueue.PendingRequestsEvent.SetEvent;
 end;
 
 end.

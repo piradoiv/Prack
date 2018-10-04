@@ -9,6 +9,7 @@ uses
 
 const
   TIMEOUT_LIMIT = 60;
+  READY_REQUEST_LIMIT = 1000;
 
 type
 
@@ -41,7 +42,7 @@ var
 begin
   while not Terminated do
   begin
-    FQueue.ReadyRequestsEvent.WaitFor(1000);
+    FQueue.ReadyRequestsEvent.WaitFor(READY_REQUEST_LIMIT);
     List := FQueue.LockList;
     try
       for I := List.Count - 1 downto 0 do
@@ -49,20 +50,12 @@ begin
         Connection := TPrackConnection(List.Items[I]);
         Connection.Setup;
 
+        if Connection.Status = pcsError then
+          Connection.SetErrorResponse(502, 'Backend error' + CRLF);
+
         if (Connection.Status <> pcsReady) and
           (SecondsBetween(Now, Connection.CreatedAt) >= TIMEOUT_LIMIT) then
-        begin
-          Connection.Response.Code := 503;
-          Connection.Response.Body := 'Timeout' + CRLF;
-          Connection.Status := pcsReady;
-        end;
-
-        if Connection.Status = pcsError then
-        begin
-          Connection.Response.Code := 503;
-          Connection.Response.Body := 'Backend error' + CRLF;
-          Connection.Status := pcsReady;
-        end;
+          Connection.SetErrorResponse(504, 'Timeout' + CRLF);
 
         if Connection.Status <> pcsReady then
           Continue;

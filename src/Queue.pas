@@ -43,16 +43,18 @@ var
   I: integer;
 begin
   List := LockList;
-  DoneCriticalSection(Mutex);
   for I := List.Count - 1 downto 0 do
   begin
     TPrackConnection(List.Items[I]).Free;
     List.Items[I] := nil;
   end;
-  inherited Destroy;
+
   PendingRequestsEvent.SetEvent;
+  DoneCriticalSection(Mutex);
+  FreeAndNil(Mutex);
   FreeAndNil(PendingRequestsEvent);
   FreeAndNil(ReadyRequestsEvent);
+  inherited Destroy;
 end;
 
 function TPrackQueue.Pop(Status: TPrackConnectionStatus): TPrackConnection;

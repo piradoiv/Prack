@@ -29,6 +29,7 @@ type
     FApiServer: TApiServer;
     FQueue: TPrackQueue;
     FOrchestra: TOrchestra;
+    procedure PrintBanner;
   public
     Active: boolean;
     constructor Create(GatewayHost: string; GatewayPort: integer;
@@ -44,13 +45,10 @@ constructor TPrack.Create(GatewayHost: string; GatewayPort: integer;
 begin
   Active := False;
   FQueue := TPrackQueue.Create;
-
   FOrchestra := TOrchestra.Create(FQueue);
-
   FGatewayHost := GatewayHost;
   FGatewayPort := GatewayPort;
   FGatewayServer := TGatewayServer.Create(FGatewayHost, FGatewayPort, FQueue);
-
   FApiHost := ApiHost;
   FApiPort := ApiPort;
   FApiServer := TApiServer.Create(FApiHost, FApiPort, FQueue);
@@ -59,17 +57,9 @@ end;
 procedure TPrack.Start;
 begin
   Active := True;
-  Writeln(CRLF,
-    '  ________                    ______', CRLF,
-    '  ___  __ \____________ _________  /__', CRLF,
-    '  __  /_/ /_  ___/  __ `/  ___/_  //_/', CRLF,
-    '  _  ____/_  /   / /_/ // /__ _  ,<', CRLF,
-    '  /_/     /_/    \__,_/ \___/ /_/|_| Proof of Concept', CRLF);
-  Writeln('Public Server listening on http://', FGatewayHost, ':', FGatewayPort);
-  Writeln('   API Server listening on http://', FApiHost, ':', FApiPort, CRLF);
-
   TThread.ExecuteInThread(@FGatewayServer.Start);
   TThread.ExecuteInThread(@FApiServer.Start);
+  PrintBanner;
 end;
 
 destructor TPrack.Destroy;
@@ -79,6 +69,18 @@ begin
   FreeAndNil(FQueue);
   Writeln('(╯°□°）╯︵ ┻━┻', CRLF);
   inherited;
+end;
+
+procedure TPrack.PrintBanner;
+begin
+  Writeln(CRLF,
+    '  ________                    ______', CRLF,
+    '  ___  __ \____________ _________  /__', CRLF,
+    '  __  /_/ /_  ___/  __ `/  ___/_  //_/', CRLF,
+    '  _  ____/_  /   / /_/ // /__ _  ,<', CRLF,
+    '  /_/     /_/    \__,_/ \___/ /_/|_| Proof of Concept', CRLF);
+  Writeln('Public Server listening on http://', FGatewayHost, ':', FGatewayPort);
+  Writeln('   API Server listening on http://', FApiHost, ':', FApiPort, CRLF);
 end;
 
 end.

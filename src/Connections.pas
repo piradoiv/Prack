@@ -33,8 +33,9 @@ type
     Socket: TSocketStream;
     RequestHeaders: TRequest;
     Response: TPrackResponse;
-    constructor Create;
+    constructor Create(Data: TSocketStream);
     destructor Destroy; override;
+    procedure SetErrorResponse(Code: integer; Body: string);
     procedure SendResponse;
     procedure Setup;
   end;
@@ -43,7 +44,7 @@ implementation
 
 { TPrackConnection }
 
-constructor TPrackConnection.Create;
+constructor TPrackConnection.Create(Data: TSocketStream);
 var
   GUID: TGUID;
 begin
@@ -51,6 +52,7 @@ begin
   CreateGuid(GUID);
   Identifier := GuidToString(GUID);
   Status := pcsIncoming;
+  Socket := Data;
 end;
 
 destructor TPrackConnection.Destroy;
@@ -58,6 +60,13 @@ begin
   FreeAndNil(Socket);
   FreeAndNil(RequestHeaders);
   inherited Destroy;
+end;
+
+procedure TPrackConnection.SetErrorResponse(Code: integer; Body: string);
+begin
+  Response.Code := Code;
+  Response.Body := Body;
+  Status := pcsReady;
 end;
 
 procedure TPrackConnection.SendResponse;

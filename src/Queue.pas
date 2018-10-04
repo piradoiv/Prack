@@ -14,7 +14,6 @@ type
   TPrackQueue = class(TThreadList)
   private
     Mutex: TRTLCriticalSection;
-    PendingRequests: integer;
   public
     ReadyRequestsEvent: TEventObject;
     PendingRequestsEvent: TEventObject;
@@ -30,7 +29,6 @@ implementation
 
 constructor TPrackQueue.Create;
 begin
-  PendingRequests := 0;
   PendingRequestsEvent := TEventObject.Create(nil, True, True, '');
   ReadyRequestsEvent := TEventObject.Create(nil, False, False, '');
   InitCriticalSection(Mutex);

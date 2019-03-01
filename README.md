@@ -32,6 +32,16 @@ Sending back Responses is being done by POSTing a JSON with Rack compatible cont
 
 ![Prack Design](https://raw.githubusercontent.com/piradoiv/Prack/master/img/Prack.png)
 
+## How to use Prack with your App Server
+
+Prack is programming language agnostic, you can build Websites or APIs in your favorite one.
+
+Usage examples:
+- [Go](https://github.com/piradoiv/prack-go)
+- [Node](https://github.com/piradoiv/prack-node-examples)
+- [PHP](https://github.com/piradoiv/prack-php-examples)
+- [Ruby](https://github.com/piradoiv/prack-ruby-examples)
+
 ## Is it fast and lightweight?
 It is! but just in theory. I didn't have a chance to proper benchmarks yet.
 

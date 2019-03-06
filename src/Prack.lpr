@@ -9,50 +9,86 @@ uses
   Classes,
   SysUtils,
   Server,
-  Syncobjs;
+  Syncobjs,
+  CustApp;
+
+type
+
+  { TConsoleApp }
+
+  TConsoleApp = class(TCustomApplication)
+  private
+    PrackApp: TPrack;
+    GatewayHost, ApiHost: string;
+    GatewayPort, ApiPort: integer;
+    TerminateEvent: TEventObject;
+    procedure PrintHelp;
+  protected
+    procedure DoRun; override;
+  end;
+
+  { TConsoleApp }
+
+  procedure TConsoleApp.PrintHelp;
+  begin
+    Writeln(Title);
+    Writeln('Usage: ', ParamStr(0), ' [arguments]');
+    Writeln;
+    Writeln('Arguments:');
+    Writeln('  --help                                 Prints this help');
+    Writeln('  -h <hostname> or --host=<hostname>     Specify gateway''s hostname');
+    Writeln('  -p <port> or --port=<port>             Specify gateway''s port');
+    Writeln('  --api-host=<hostname>                  Specify API hostname');
+    Writeln('  --api-port=<port>                      Specify API port');
+    Halt(0);
+  end;
+
+  procedure TConsoleApp.DoRun;
+  begin
+    if HasOption('help') then
+      PrintHelp;
+
+    GatewayHost := Server.DEFAULT_GATEWAY_HOST;
+    if HasOption('h', 'host') then
+      GatewayHost := GetOptionValue('h', 'host');
+
+    GatewayPort := Server.DEFAULT_GATEWAY_PORT;
+    if HasOption('p', 'port') then
+    begin
+      try
+        GatewayPort := StrToInt(GetOptionValue('p', 'port'));
+      except
+        Writeln('Gateway Port must be numeric');
+        Halt(1);
+      end;
+    end;
+
+    ApiHost := Server.DEFAULT_API_HOST;
+    if HasOption('api-host') then
+      ApiHost := GetOptionValue('api-host');
+
+    APIPort := Server.DEFAULT_API_PORT;
+    if HasOption('api-port') then
+    begin
+      try
+        APIPort := StrToInt(GetOptionValue('api-port'));
+      except
+        Writeln('API Port must be numeric');
+        Halt(1);
+      end;
+    end;
+
+    PrackApp := TPrack.Create(GatewayHost, GatewayPort, ApiHost, ApiPort);
+    PrackApp.Start;
+
+    TerminateEvent := TEventObject.Create(nil, True, False, '');
+    TerminateEvent.WaitFor(INFINITE);
+  end;
 
 var
-  App: TPrack;
-  GatewayHost, ApiHost: string;
-  GatewayPort, ApiPort: integer;
-  TerminateEvent: TEventObject;
-
-  procedure SigKillHandler(Sig: longint); cdecl;
-  begin
-    Write(#8#8, '  ', CRLF, 'Shutting down the server...', CRLF, CRLF);
-    App.Active := False;
-    TerminateEvent.SetEvent;
-  end;
-
+  ConsoleApp: TConsoleApp;
 begin
-  TerminateEvent := TEventObject.Create(nil, True, False, '');
-  FpSignal(SIGINT, @SigKillHandler);
-
-  if ParamStr(1) <> '' then
-    GatewayHost := ParamStr(1)
-  else
-    GatewayHost := Server.DEFAULT_GATEWAY_HOST;
-
-  try
-    GatewayPort := StrToInt(ParamStr(2));
-  except
-    GatewayPort := Server.DEFAULT_GATEWAY_PORT;
-  end;
-
-  if ParamStr(3) <> '' then
-    ApiHost := ParamStr(3)
-  else
-    ApiHost := Server.DEFAULT_API_HOST;
-
-  try
-    APIPort := StrToInt(ParamStr(4));
-  except
-    APIPort := Server.DEFAULT_API_PORT;
-  end;
-
-  App := TPrack.Create(GatewayHost, GatewayPort, ApiHost, ApiPort);
-  App.Start;
-
-  TerminateEvent.WaitFor(INFINITE);
-  FreeAndNil(App);
+  ConsoleApp := TConsoleApp.Create(nil);
+  ConsoleApp.Title := 'Prack';
+  ConsoleApp.Run;
 end.

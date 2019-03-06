@@ -29,19 +29,19 @@ type
 
   { TConsoleApp }
 
-procedure TConsoleApp.PrintHelp;
-begin
-  Writeln(Title);
-  Writeln('Usage: ', ParamStr(0), ' [arguments]');
-  Writeln;
-  Writeln('Arguments:');
-  Writeln('  --help                                 Prints this help');
-  Writeln('  -h <hostname> or --host=<hostname>     Specify gateway''s hostname');
-  Writeln('  -p <port> or --port=<port>             Specify gateway''s port');
-  Writeln('  --api-host=<hostname>                  Specify API hostname');
-  Writeln('  --api-port=<port>                      Specify API port');
-  Halt(0);
-end;
+  procedure TConsoleApp.PrintHelp;
+  begin
+    Writeln(Title);
+    Writeln('Usage: ', ParamStr(0), ' [arguments]');
+    Writeln;
+    Writeln('Arguments:');
+    Writeln('  --help                                 Prints this help');
+    Writeln('  -h <hostname> or --host=<hostname>     Specify gateway''s hostname');
+    Writeln('  -p <port> or --port=<port>             Specify gateway''s port');
+    Writeln('  --api-host=<hostname>                  Specify API hostname');
+    Writeln('  --api-port=<port>                      Specify API port');
+    Halt(0);
+  end;
 
   procedure TConsoleApp.DoRun;
   begin

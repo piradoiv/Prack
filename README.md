@@ -59,5 +59,8 @@ Proof of concept, not production ready. It's still under heavy development.
 - Website and extensive documentation, with a good amount of examples
 - Security
 
-## How to build:
-`lazbuild PrackServerApp.lpr`
+## How to build and run:
+
+`make`
+
+This will produce an executable inside `dist` folder.
